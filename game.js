@@ -11,6 +11,19 @@ const endSound = new Audio("assets/end.opus");
 jumpSound.preload = "auto";
 endSound.preload = "auto";
 
+/* ---------- PLAYER IMAGE ---------- */
+const playerImg = new Image();
+playerImg.src = "assets/player.png";
+let playerImgReady = false;
+
+playerImg.onload = () => {
+  playerImgReady = true;
+};
+
+playerImg.onerror = () => {
+  console.warn("Player image failed to load. Using fallback.");
+};
+
 /* ---------- GAME STATE ---------- */
 let running = false;
 let score = 0;
@@ -113,11 +126,11 @@ function drawBird(b, color) {
   ctx.fillRect(b.x + 12, b.y + wing, 6, 4);
 }
 
-/* ---------- LOOP ---------- */
+/* ---------- MAIN LOOP ---------- */
 function loop() {
   if (!running) return;
 
-  // Day / Night toggle
+  // Night toggle
   if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
     if (isNight) generateStars();
@@ -176,7 +189,14 @@ function loop() {
     player.vy = 0;
     player.jumping = false;
   }
-  ctx.fillRect(player.x, player.y, player.w, player.h);
+
+  // Player render (image + fallback)
+  if (playerImgReady) {
+    ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+  } else {
+    ctx.fillStyle = fg;
+    ctx.fillRect(player.x, player.y, player.w, player.h);
+  }
 
   // Cactus
   spawnCactus();
