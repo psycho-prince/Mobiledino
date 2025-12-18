@@ -32,24 +32,40 @@ const players = [
 ];
 
 let currentPlayer = players[0];
-
 const playerImg = new Image();
 playerImg.src = currentPlayer.img;
 
 let jumpSound = safeAudio(currentPlayer.jump);
 let endSound = safeAudio(currentPlayer.end);
 
+/* ---------- MALAYALAM MEME DEATH MESSAGES ---------- */
+const deathMessages = [
+  "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
+  "കാക്ടസ് പറഞ്ഞത് കേട്ടില്ല അല്ലേ 🌵",
+  "ഇതെന്താ slow motion കളി ആണോ 🤡",
+  "ബ്രോ… jump ബട്ടൺ ഉണ്ടല്ലോ 😶",
+  "പറന്ന പക്ഷിയെ നോക്കി നിന്നോ 😌",
+  "കണ്ണ് തുറന്ന് കളിച്ചാൽ മതിയായിരുന്നു 👀",
+  "ഇന്നും reflex vacation എടുത്തു 🏖️",
+  "ഇത് skill issue അല്ല, life issue ആണ് 😔",
+  "പറന്നത് പക്ഷി… വീണത് നീ 🐦",
+  "കാക്ടസ്: 1  |  നീ: 0 💀",
+  "ചാടാൻ മറന്നോ അതോ പേടിച്ചോ 😆",
+  "ബ്രോ thought he was immortal 🫠",
+  "ഇവിടെ jump ചെയ്യണം എന്ന് Google പറഞ്ഞില്ലേ 🤔",
+  "അയ്യോ… നേരെ കയറി 🤡",
+  "GG bro, next life try 😵"
+];
+
 /* ---------- GAME STATE ---------- */
 let gameRunning = false;
+let isGameOver = false;
+
 let score = 0;
 let speed = 3;
+let phase = "ground"; // ground | air
 
 let obstacleTimer = null;
-let cloudTimer = null;
-let rockTimer = null;
-
-let isNight = false;
-let groundOffset = 0;
 
 const gravity = 0.9;
 
@@ -63,24 +79,30 @@ const player = {
   jumping: false
 };
 
-/* ---------- ENV OBJECTS ---------- */
+/* ---------- OBJECTS ---------- */
 let obstacles = [];
 let birds = [];
-let clouds = [];
-let rocks = [];
-let stars = [];
 
 /* ---------- BIRD CONTROL ---------- */
 let lastBirdTime = 0;
-let birdCooldown = 2200;
+let birdCooldown = 2600;
 let lastBirdHigh = false;
 
-/* ---------- PLAYER SELECT ---------- */
-function clearSelection() {
-  document.querySelectorAll(".player-card")
-    .forEach(c => c.classList.remove("selected"));
+/* ---------- CHARACTER LOCK UI ---------- */
+function updateCharacterLockUI() {
+  players.forEach(p => {
+    const card = document.getElementById("card-" + p.id);
+    if (!card) return;
+
+    if (p.code && !localStorage.getItem("unlock_" + p.id)) {
+      card.classList.add("locked");
+    } else {
+      card.classList.remove("locked");
+    }
+  });
 }
 
+/* ---------- PLAYER SELECT ---------- */
 function selectPlayer(id) {
   const p = players.find(x => x.id === id);
   if (!p) return;
@@ -96,12 +118,13 @@ function selectPlayer(id) {
   jumpSound = safeAudio(p.jump);
   endSound = safeAudio(p.end);
 
-  clearSelection();
-  document.getElementById("card-" + id)?.classList.add("selected");
+  updateCharacterLockUI();
 }
 
 /* ---------- SPAWN ---------- */
 function spawnObstacle() {
+  if (phase !== "ground") return;
+
   obstacles.push({
     x: canvas.width,
     y: 230,
@@ -111,50 +134,22 @@ function spawnObstacle() {
 }
 
 function spawnBird() {
+  if (phase !== "air") return;
+
   const now = Date.now();
   if (now - lastBirdTime < birdCooldown) return;
-
   lastBirdTime = now;
+
   lastBirdHigh = !lastBirdHigh;
+  const isFake = Math.random() < 0.2;
 
-  const isFake = Math.random() < 0.15; // 15% fake bird
-
-  birds.push({
+  birds = [{
     x: canvas.width,
-    y: isFake
-      ? 140                     // fake bird higher
-      : lastBirdHigh ? 160 : 200,
+    y: isFake ? 140 : (lastBirdHigh ? 160 : 200),
     w: 30,
     h: 12,
     fake: isFake
-  });
-}
-
-function spawnCloud() {
-  clouds.push({
-    x: canvas.width,
-    y: 40 + Math.random() * 60,
-    w: 30 + Math.random() * 30
-  });
-}
-
-function spawnRock() {
-  rocks.push({
-    x: canvas.width,
-    y: 248,
-    w: 4 + Math.random() * 4
-  });
-}
-
-function generateStars() {
-  stars = [];
-  for (let i = 0; i < 30; i++) {
-    stars.push({
-      x: Math.random() * canvas.width,
-      y: Math.random() * 120,
-      r: Math.random() * 1.5 + 0.5
-    });
-  }
+  }];
 }
 
 /* ---------- COLLISION ---------- */
@@ -168,93 +163,34 @@ function isColliding(a, b) {
 }
 
 /* ---------- DRAW ---------- */
-function drawCactus(o, c) {
-  ctx.fillStyle = c;
+function drawCactus(o) {
+  ctx.fillStyle = "#000";
   ctx.fillRect(o.x, o.y, 18, 40);
   ctx.fillRect(o.x + 18, o.y + 18, 8, 12);
 }
 
-function drawBird(b, c) {
-  ctx.fillStyle = b.fake ? "#888" : c; // fake bird looks faded
+function drawBird(b) {
+  ctx.fillStyle = b.fake ? "#777" : "#000";
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y - 4, 6, 4);
   ctx.fillRect(b.x + 12, b.y - 4, 6, 4);
-}
-
-function drawGround(c) {
-  ctx.fillStyle = c;
-  for (let i = 0; i < canvas.width; i += 20) {
-    ctx.fillRect(i - groundOffset, 260, 10, 2);
-  }
-  groundOffset = (groundOffset + speed) % 20;
-}
-
-function drawClouds(c) {
-  ctx.fillStyle = c;
-  clouds.forEach(cl => {
-    ctx.fillRect(cl.x, cl.y, cl.w, 6);
-    ctx.fillRect(cl.x + 6, cl.y - 4, cl.w - 12, 4);
-    cl.x -= 0.3;
-  });
-  clouds = clouds.filter(c => c.x + c.w > 0);
-}
-
-function drawRocks(c) {
-  ctx.fillStyle = c;
-  rocks.forEach(r => {
-    ctx.fillRect(r.x, r.y, r.w, 2);
-    r.x -= speed;
-  });
-  rocks = rocks.filter(r => r.x + r.w > 0);
-}
-
-function drawStars() {
-  ctx.fillStyle = "#fff";
-  stars.forEach(s => {
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
-    ctx.fill();
-  });
-}
-
-function drawMoon() {
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.arc(720, 60, 18, 0, Math.PI * 2);
-  ctx.fill();
-}
-
-function drawSun() {
-  ctx.fillStyle = "#ffeb3b";
-  ctx.beginPath();
-  ctx.arc(720, 60, 18, 0, Math.PI * 2);
-  ctx.fill();
 }
 
 /* ---------- GAME LOOP ---------- */
 function gameLoop() {
   if (!gameRunning) return;
 
-  if (score > 0 && score % 600 === 0) {
-    isNight = !isNight;
-    if (isNight) generateStars();
+  // Phase logic
+  if (score < 400) phase = "ground";
+  else phase = "air";
+
+  // Speed milestones
+  if (score === 500 || score === 1000 || score === 1500) {
+    speed += 0.8;
   }
 
-  const bg = isNight ? "#000" : "#fff";
-  const fg = isNight ? "#fff" : "#000";
-
-  ctx.fillStyle = bg;
+  ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  if (isNight) {
-    drawStars();
-    drawMoon();
-  } else {
-    drawSun();
-  }
-
-  drawClouds(fg);
-  drawGround(fg);
 
   // Player physics
   player.vy += gravity;
@@ -267,45 +203,66 @@ function gameLoop() {
 
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  drawRocks(fg);
-
+  // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
-    drawCactus(o, fg);
+    drawCactus(o);
     if (isColliding(player, o)) endGame();
   });
 
-  if (score > 300) spawnBird();
-
   birds.forEach(b => {
     b.x -= speed + 1;
-    drawBird(b, fg);
+    drawBird(b);
     if (!b.fake && isColliding(player, b)) endGame();
   });
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
   birds = birds.filter(b => b.x + b.w > 0);
 
-  score++;
-  speed += 0.0005;
+  spawnBird();
 
-  ctx.fillStyle = fg;
+  score++;
+  ctx.fillStyle = "#000";
   ctx.fillText(`Score: ${score}`, 10, 20);
 
   requestAnimationFrame(gameLoop);
 }
 
+/* ---------- END GAME ---------- */
 function endGame() {
+  if (isGameOver) return;
+  isGameOver = true;
   gameRunning = false;
+
+  const msg =
+    deathMessages[Math.floor(Math.random() * deathMessages.length)];
+
   endSound.currentTime = 0;
   endSound.play();
-  startScreen.style.display = "flex";
-  startBtn.textContent = "RETRY";
+
+  setTimeout(() => {
+    startScreen.style.display = "flex";
+    startScreen.innerHTML = `
+      <h1>💀 Game Over</h1>
+      <p style="margin:8px 0;font-size:14px;">${msg}</p>
+      <p>Score: ${score}</p>
+      <button onclick="retry()">Retry</button>
+      <button onclick="goHome()">Main Menu</button>
+    `;
+  }, 900);
+}
+
+function retry() {
+  location.reload();
+}
+
+function goHome() {
+  location.reload();
 }
 
 /* ---------- INPUT ---------- */
 function jump() {
-  if (!player.jumping && gameRunning) {
+  if (!player.jumping && gameRunning && !isGameOver) {
     player.vy = -22;
     player.jumping = true;
     jumpSound.currentTime = 0;
@@ -322,34 +279,25 @@ startBtn.onclick = () => {
 
   obstacles = [];
   birds = [];
-  clouds = [];
-  rocks = [];
-  stars = [];
-
   score = 0;
   speed = 3;
-  isNight = false;
-  groundOffset = 0;
+  phase = "ground";
+  isGameOver = false;
   lastBirdTime = 0;
-  lastBirdHigh = false;
 
   player.y = 220;
   player.vy = 0;
   player.jumping = false;
-
-  if (obstacleTimer) clearInterval(obstacleTimer);
-  if (cloudTimer) clearInterval(cloudTimer);
-  if (rockTimer) clearInterval(rockTimer);
 
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
   gameRunning = true;
 
-  spawnObstacle();
-  obstacleTimer = setInterval(spawnObstacle, 1700);
-  cloudTimer = setInterval(spawnCloud, 4000);
-  rockTimer = setInterval(spawnRock, 1500);
+  if (obstacleTimer) clearInterval(obstacleTimer);
+  obstacleTimer = setInterval(spawnObstacle, 2200);
 
   gameLoop();
 };
+
+updateCharacterLockUI();
