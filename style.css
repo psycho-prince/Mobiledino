@@ -1,18 +1,13 @@
-* {
-  box-sizing: border-box;
-  -webkit-tap-highlight-color: transparent;
-}
+* { box-sizing: border-box; }
 
 body {
   margin: 0;
   background: #111;
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   color: #fff;
+  font-family: system-ui, sans-serif;
   text-align: center;
   overflow: hidden;
 }
-
-/* ---------------- START / GAME OVER SCREEN ---------------- */
 
 #startScreen {
   position: fixed;
@@ -23,26 +18,17 @@ body {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  padding: 20px;
 }
-
-#title {
-  margin-bottom: 14px;
-}
-
-/* ---------------- CHARACTER SELECT ---------------- */
 
 #playerSelect {
   display: flex;
-  gap: 18px;
-  margin: 14px 0 10px;
+  gap: 16px;
+  margin: 12px 0;
 }
 
 .player-card {
   width: 90px;
   cursor: pointer;
-  text-align: center;
-  user-select: none;
 }
 
 .player-card img {
@@ -51,66 +37,30 @@ body {
   border-radius: 50%;
   border: 3px solid #444;
   object-fit: cover;
-  transition: transform 0.15s ease, border-color 0.15s ease;
 }
 
-.player-card span {
-  display: block;
-  margin-top: 6px;
-  font-size: 12px;
-  opacity: 0.9;
-}
+.player-card.selected img { border-color: #00ff88; }
+.player-card.locked img { filter: grayscale(1); opacity: 0.4; }
 
-.player-card.selected img {
-  border-color: #00ff88;
-  transform: scale(1.05);
-}
-
-.player-card.locked img {
-  filter: grayscale(1) blur(1px);
-  opacity: 0.5;
-}
-
-/* ---------------- DEATH TEXT ---------------- */
-
-.death-text {
-  margin-top: 14px;
+#deathMessage, #scoreText {
+  display: none;
   font-size: 14px;
-  line-height: 1.4;
-  display: none;
+  margin: 6px 0;
 }
-
-.score-text {
-  margin-top: 6px;
-  font-size: 13px;
-  opacity: 0.8;
-  display: none;
-}
-
-/* ---------------- BUTTONS ---------------- */
 
 #menuButtons {
-  margin-top: 16px;
   display: flex;
   gap: 12px;
+  margin-top: 12px;
 }
 
 button {
-  padding: 12px 28px;
+  padding: 12px 26px;
   font-size: 16px;
   border-radius: 14px;
   border: none;
   cursor: pointer;
-  background: #fff;
-  color: #000;
-  font-weight: 600;
 }
-
-button:active {
-  transform: scale(0.96);
-}
-
-/* ---------------- CANVAS ---------------- */
 
 canvas {
   display: block;
