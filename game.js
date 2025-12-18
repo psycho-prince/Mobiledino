@@ -4,12 +4,17 @@ ctx.imageSmoothingEnabled = false;
 
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
+const retryBtn = document.getElementById("retryBtn");
+const homeBtn = document.getElementById("homeBtn");
+
+const titleEl = document.getElementById("title");
+const deathMessageEl = document.getElementById("deathMessage");
+const scoreTextEl = document.getElementById("scoreText");
 
 /* ---------- AUDIO ---------- */
 function safeAudio(src) {
   const a = new Audio(src);
   a.preload = "auto";
-  a.onerror = () => console.warn("Audio failed:", src);
   return a;
 }
 
@@ -41,30 +46,19 @@ let endSound = safeAudio(currentPlayer.end);
 /* ---------- MALAYALAM MEME DEATH MESSAGES ---------- */
 const deathMessages = [
   "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
-  "കാക്ടസ് പറഞ്ഞത് കേട്ടില്ല അല്ലേ 🌵",
-  "ഇതെന്താ slow motion കളി ആണോ 🤡",
-  "ബ്രോ… jump ബട്ടൺ ഉണ്ടല്ലോ 😶",
-  "പറന്ന പക്ഷിയെ നോക്കി നിന്നോ 😌",
   "കണ്ണ് തുറന്ന് കളിച്ചാൽ മതിയായിരുന്നു 👀",
+  "പറന്ന പക്ഷിയെ നോക്കി നിന്നോ 😌",
   "ഇന്നും reflex vacation എടുത്തു 🏖️",
-  "ഇത് skill issue അല്ല, life issue ആണ് 😔",
-  "പറന്നത് പക്ഷി… വീണത് നീ 🐦",
   "കാക്ടസ്: 1  |  നീ: 0 💀",
-  "ചാടാൻ മറന്നോ അതോ പേടിച്ചോ 😆",
-  "ബ്രോ thought he was immortal 🫠",
-  "ഇവിടെ jump ചെയ്യണം എന്ന് Google പറഞ്ഞില്ലേ 🤔",
-  "അയ്യോ… നേരെ കയറി 🤡",
   "GG bro, next life try 😵"
 ];
 
 /* ---------- GAME STATE ---------- */
 let gameRunning = false;
 let isGameOver = false;
-
 let score = 0;
 let speed = 3;
-let phase = "ground"; // ground | air
-
+let phase = "ground";
 let obstacleTimer = null;
 
 const gravity = 0.9;
@@ -79,77 +73,25 @@ const player = {
   jumping: false
 };
 
-/* ---------- OBJECTS ---------- */
 let obstacles = [];
 let birds = [];
-
-/* ---------- BIRD CONTROL ---------- */
-let lastBirdTime = 0;
-let birdCooldown = 2600;
-let lastBirdHigh = false;
-
-/* ---------- CHARACTER LOCK UI ---------- */
-function updateCharacterLockUI() {
-  players.forEach(p => {
-    const card = document.getElementById("card-" + p.id);
-    if (!card) return;
-
-    if (p.code && !localStorage.getItem("unlock_" + p.id)) {
-      card.classList.add("locked");
-    } else {
-      card.classList.remove("locked");
-    }
-  });
-}
-
-/* ---------- PLAYER SELECT ---------- */
-function selectPlayer(id) {
-  const p = players.find(x => x.id === id);
-  if (!p) return;
-
-  if (p.code && !localStorage.getItem("unlock_" + p.id)) {
-    const input = prompt("Enter 4-digit code:");
-    if (input !== p.code) return alert("Wrong code 😅");
-    localStorage.setItem("unlock_" + p.id, "true");
-  }
-
-  currentPlayer = p;
-  playerImg.src = p.img;
-  jumpSound = safeAudio(p.jump);
-  endSound = safeAudio(p.end);
-
-  updateCharacterLockUI();
-}
 
 /* ---------- SPAWN ---------- */
 function spawnObstacle() {
   if (phase !== "ground") return;
-
-  obstacles.push({
-    x: canvas.width,
-    y: 230,
-    w: 18,
-    h: 40
-  });
+  obstacles.push({ x: canvas.width, y: 230, w: 18, h: 40 });
 }
 
 function spawnBird() {
   if (phase !== "air") return;
+  if (birds.length > 0) return;
 
-  const now = Date.now();
-  if (now - lastBirdTime < birdCooldown) return;
-  lastBirdTime = now;
-
-  lastBirdHigh = !lastBirdHigh;
-  const isFake = Math.random() < 0.2;
-
-  birds = [{
+  birds.push({
     x: canvas.width,
-    y: isFake ? 140 : (lastBirdHigh ? 160 : 200),
+    y: Math.random() > 0.5 ? 160 : 200,
     w: 30,
-    h: 12,
-    fake: isFake
-  }];
+    h: 12
+  });
 }
 
 /* ---------- COLLISION ---------- */
@@ -162,37 +104,16 @@ function isColliding(a, b) {
   );
 }
 
-/* ---------- DRAW ---------- */
-function drawCactus(o) {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(o.x, o.y, 18, 40);
-  ctx.fillRect(o.x + 18, o.y + 18, 8, 12);
-}
-
-function drawBird(b) {
-  ctx.fillStyle = b.fake ? "#777" : "#000";
-  ctx.fillRect(b.x, b.y, 18, 6);
-  ctx.fillRect(b.x + 4, b.y - 4, 6, 4);
-  ctx.fillRect(b.x + 12, b.y - 4, 6, 4);
-}
-
 /* ---------- GAME LOOP ---------- */
 function gameLoop() {
   if (!gameRunning) return;
 
-  // Phase logic
   if (score < 400) phase = "ground";
   else phase = "air";
-
-  // Speed milestones
-  if (score === 500 || score === 1000 || score === 1500) {
-    speed += 0.8;
-  }
 
   ctx.fillStyle = "#fff";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Player physics
   player.vy += gravity;
   player.y += player.vy;
   if (player.y >= 220) {
@@ -203,17 +124,16 @@ function gameLoop() {
 
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
-    drawCactus(o);
+    ctx.fillRect(o.x, o.y, 18, 40);
     if (isColliding(player, o)) endGame();
   });
 
   birds.forEach(b => {
     b.x -= speed + 1;
-    drawBird(b);
-    if (!b.fake && isColliding(player, b)) endGame();
+    ctx.fillRect(b.x, b.y, 18, 6);
+    if (isColliding(player, b)) endGame();
   });
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
@@ -234,30 +154,25 @@ function endGame() {
   isGameOver = true;
   gameRunning = false;
 
-  const msg =
-    deathMessages[Math.floor(Math.random() * deathMessages.length)];
+  const msg = deathMessages[Math.floor(Math.random() * deathMessages.length)];
 
   endSound.currentTime = 0;
   endSound.play();
 
   setTimeout(() => {
     startScreen.style.display = "flex";
-    startScreen.innerHTML = `
-      <h1>💀 Game Over</h1>
-      <p style="margin:8px 0;font-size:14px;">${msg}</p>
-      <p>Score: ${score}</p>
-      <button onclick="retry()">Retry</button>
-      <button onclick="goHome()">Main Menu</button>
-    `;
-  }, 900);
-}
 
-function retry() {
-  location.reload();
-}
+    titleEl.textContent = "💀 You Lost";
+    deathMessageEl.textContent = msg;
+    scoreTextEl.textContent = `Score: ${score}`;
 
-function goHome() {
-  location.reload();
+    deathMessageEl.style.display = "block";
+    scoreTextEl.style.display = "block";
+
+    startBtn.style.display = "none";
+    retryBtn.style.display = "inline-block";
+    homeBtn.style.display = "inline-block";
+  }, 900); // allow audio to hit
 }
 
 /* ---------- INPUT ---------- */
@@ -273,8 +188,12 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-/* ---------- START ---------- */
-startBtn.onclick = () => {
+/* ---------- BUTTONS ---------- */
+startBtn.onclick = startGame;
+retryBtn.onclick = startGame;
+homeBtn.onclick = () => location.reload();
+
+function startGame() {
   startScreen.style.display = "none";
 
   obstacles = [];
@@ -283,7 +202,6 @@ startBtn.onclick = () => {
   speed = 3;
   phase = "ground";
   isGameOver = false;
-  lastBirdTime = 0;
 
   player.y = 220;
   player.vy = 0;
@@ -292,12 +210,9 @@ startBtn.onclick = () => {
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
-  gameRunning = true;
-
   if (obstacleTimer) clearInterval(obstacleTimer);
   obstacleTimer = setInterval(spawnObstacle, 2200);
 
+  gameRunning = true;
   gameLoop();
-};
-
-updateCharacterLockUI();
+    }
