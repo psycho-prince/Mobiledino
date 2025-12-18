@@ -6,11 +6,10 @@ ctx.imageSmoothingEnabled = false;
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 
-// Player image
+// Assets
 const playerImg = new Image();
 playerImg.src = "assets/player.png";
 
-// Sounds
 const jumpSound = new Audio("assets/jump.opus");
 const endSound = new Audio("assets/end.opus");
 
@@ -37,12 +36,11 @@ const player = {
 let obstacles = [];
 let spawnTimer = null;
 
-// -------- SPAWN --------
+// ---------- SPAWN ----------
 
 function spawnObstacle() {
   const chance = Math.random();
 
-  // Flying enemy (after score threshold)
   if (score > 400 && chance > 0.8) {
     obstacles.push({
       type: "fly",
@@ -63,7 +61,7 @@ function spawnObstacle() {
   }
 }
 
-// -------- COLLISION --------
+// ---------- COLLISION ----------
 
 function isColliding(a, b) {
   return (
@@ -74,7 +72,7 @@ function isColliding(a, b) {
   );
 }
 
-// -------- RESET --------
+// ---------- RESET ----------
 
 function resetGame() {
   obstacles = [];
@@ -86,7 +84,7 @@ function resetGame() {
   player.jumping = false;
 }
 
-// -------- DRAWING --------
+// ---------- DRAW ----------
 
 function drawCactus(o, color) {
   ctx.fillStyle = color;
@@ -97,7 +95,7 @@ function drawCactus(o, color) {
   if (o.variant === "double") {
     // left arm
     ctx.fillRect(o.x - 10, o.y + 12, 10, 8);
-    ctx.fillRect(o.x - 6, o.y + 20, 6, 12);
+    ctx.fillRect(o.x - 6,  o.y + 20, 6, 12);
 
     // right arm
     ctx.fillRect(o.x + 18, o.y + 18, 8, 10);
@@ -111,26 +109,23 @@ function drawCactus(o, color) {
 function drawFly(o, color) {
   ctx.fillStyle = color;
 
-  // body
-  ctx.fillRect(o.x, o.y, 18, 6);
-
-  // wings
-  ctx.fillRect(o.x + 2, o.y - 4, 6, 4);
-  ctx.fillRect(o.x + 10, o.y - 4, 6, 4);
+  ctx.fillRect(o.x, o.y, 18, 6); // body
+  ctx.fillRect(o.x + 2, o.y - 4, 6, 4);  // left wing
+  ctx.fillRect(o.x + 10, o.y - 4, 6, 4); // right wing
 }
 
-// -------- GAME LOOP --------
+// ---------- GAME LOOP ----------
 
 function gameLoop() {
   if (!gameRunning) return;
 
-  // Toggle day/night every ~600 score
+  // Toggle night mode every 600 score
   if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
   }
 
-  // Background + object colors
-  const bgColor = isNight ? "#111" : "#eee";
+  // HARD COLOR RULES (no bugs)
+  const bgColor = isNight ? "#000" : "#fff";
   const objColor = isNight ? "#fff" : "#000";
 
   // Background
@@ -147,7 +142,7 @@ function gameLoop() {
     player.jumping = false;
   }
 
-  // Draw player
+  // Player
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
   // Obstacles
@@ -179,7 +174,7 @@ function gameLoop() {
   requestAnimationFrame(gameLoop);
 }
 
-// -------- INPUT --------
+// ---------- INPUT ----------
 
 function jump() {
   if (!player.jumping && gameRunning) {
@@ -193,14 +188,14 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-// -------- START --------
+// ---------- START ----------
 
 startBtn.onclick = () => {
   startScreen.style.display = "none";
   resetGame();
   gameRunning = true;
 
-  // Unlock audio (mobile)
+  // Unlock audio for mobile
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
