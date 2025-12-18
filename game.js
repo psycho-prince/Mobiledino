@@ -6,46 +6,50 @@ const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("playBtn");
 const message = document.getElementById("message");
 
-/* AUDIO */
+/* ---------- AUDIO ---------- */
 const jumpSound = new Audio("assets/jump.opus");
 const endSound = new Audio("assets/end.opus");
 
-/* PLAYER IMAGE */
+/* ---------- PLAYER IMAGE ---------- */
 const playerImg = new Image();
 playerImg.src = "assets/player.png";
 let playerImgReady = false;
-playerImg.onload = () => playerImgReady = true;
+playerImg.onload = () => (playerImgReady = true);
 
-/* GAME STATE */
+/* ---------- GAME STATE ---------- */
 let running = false;
 let score = 0;
 let speed = 6;
 let gravity = 0.9;
 let groundOffset = 0;
 let isNight = false;
+let lastJumpTime = 0;
 
-/* PLAYER */
+/* ---------- PLAYER ---------- */
 const player = {
-  x: 50, y: 220, w: 40, h: 40,
+  x: 50,
+  y: 220,
+  w: 40,
+  h: 40,
   vy: 0,
   jumping: false,
   runFrame: 0,
   runTick: 0
 };
 
-/* OBJECTS */
+/* ---------- OBJECTS ---------- */
 let cacti = [];
 let birds = [];
 let clouds = [];
 let stones = [];
 let stars = [];
 
-/* BIRD CONTROL (OG-ACCURATE) */
+/* ---------- BIRDS ---------- */
 const birdHeights = [200, 180];
 let birdIndex = 0;
 let birdCooldown = 0;
 
-/* MEMES */
+/* ---------- MEMES ---------- */
 const memes = [
   "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
   "Skill issue bro 🤡",
@@ -58,12 +62,9 @@ const memes = [
   "ഇത് speed run അല്ല 😂",
   "Ayyo… നേരെ കയറി 💀"
 ];
+const randomMeme = () => memes[Math.floor(Math.random() * memes.length)];
 
-function randomMeme() {
-  return memes[Math.floor(Math.random() * memes.length)];
-}
-
-/* HELPERS */
+/* ---------- HELPERS ---------- */
 function collide(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -84,7 +85,7 @@ function genStars() {
   }
 }
 
-/* SPAWN */
+/* ---------- SPAWN ---------- */
 function spawnCactus() {
   const last = cacti[cacti.length - 1];
   if (last && last.x > 520) return;
@@ -93,11 +94,21 @@ function spawnCactus() {
 
 function spawnBird() {
   if (score < 400 || birds.length > 0 || birdCooldown > 0) return;
+
+  // ❌ Prevent impossible cactus + bird combo
+  const nearCactus = cacti.find(
+    c => c.x > player.x && c.x < player.x + 220
+  );
+  if (nearCactus) return;
+
   birds.push({
     x: canvas.width,
     y: birdHeights[birdIndex],
-    w: 34, h: 14, frame: 0
+    w: 34,
+    h: 14,
+    frame: 0
   });
+
   birdIndex = (birdIndex + 1) % birdHeights.length;
   birdCooldown = 260;
 }
@@ -111,19 +122,23 @@ function spawnCloud() {
 }
 
 function spawnStone() {
-  stones.push({ x: canvas.width, y: 252, w: 3 + Math.random() * 4 });
+  stones.push({
+    x: canvas.width,
+    y: 252,
+    w: 3 + Math.random() * 4
+  });
 }
 
-/* DRAW */
-function drawBird(b, col) {
+/* ---------- DRAW ---------- */
+function drawBird(b, color) {
   const wing = b.frame < 12 ? -4 : 0;
-  ctx.fillStyle = col;
+  ctx.fillStyle = color;
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y + wing, 6, 4);
   ctx.fillRect(b.x + 12, b.y + wing, 6, 4);
 }
 
-/* LOOP */
+/* ---------- MAIN LOOP ---------- */
 function loop() {
   if (!running) return;
 
@@ -176,6 +191,7 @@ function loop() {
   });
   stones = stones.filter(s => s.x + s.w > 0);
 
+  // Player physics
   player.vy += gravity;
   player.y += player.vy;
   if (player.y >= 220) {
@@ -189,6 +205,7 @@ function loop() {
     if (player.runTick % 6 === 0) player.runFrame ^= 1;
   }
 
+  // Player render (no box)
   if (playerImgReady) {
     ctx.save();
     ctx.shadowColor = isNight ? "#0f0" : "#000";
@@ -203,6 +220,7 @@ function loop() {
     ctx.restore();
   }
 
+  // Cactus
   spawnCactus();
   cacti.forEach(c => {
     c.x -= speed;
@@ -211,6 +229,7 @@ function loop() {
   });
   cacti = cacti.filter(c => c.x + c.w > 0);
 
+  // Birds (OG speed)
   spawnBird();
   birds.forEach(b => {
     const birdSpeed = Math.min(4.2, speed * 0.45);
@@ -227,19 +246,26 @@ function loop() {
   requestAnimationFrame(loop);
 }
 
-/* INPUT */
+/* ---------- INPUT ---------- */
 function jump() {
-  if (!player.jumping && running) {
-    player.vy = -18;
+  if (!running) return;
+
+  const now = Date.now();
+  const doubleTap = now - lastJumpTime < 250;
+  lastJumpTime = now;
+
+  if (!player.jumping) {
+    player.vy = doubleTap ? -24 : -18;
     player.jumping = true;
     jumpSound.currentTime = 0;
     jumpSound.play();
   }
 }
+
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-/* CONTROL */
+/* ---------- CONTROL ---------- */
 function startGame() {
   overlay.style.display = "none";
   cacti = [];
