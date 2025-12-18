@@ -29,16 +29,15 @@ const player = {
   jumping: false
 };
 
-/* ---------- CACTUS ---------- */
+/* ---------- OBJECTS ---------- */
 let cacti = [];
-
-/* ---------- BIRDS ---------- */
 let birds = [];
+let clouds = [];
+let stones = [];
+let stars = [];
+
 const birdHeights = [200, 180, 160];
 let birdIndex = 0;
-
-/* ---------- STARS ---------- */
-let stars = [];
 
 /* ---------- HELPERS ---------- */
 function collide(a, b) {
@@ -64,7 +63,7 @@ function generateStars() {
 /* ---------- SPAWN ---------- */
 function spawnCactus() {
   const last = cacti[cacti.length - 1];
-  if (last && last.x > 500) return;
+  if (last && last.x > 520) return;
 
   cacti.push({
     x: canvas.width,
@@ -89,20 +88,36 @@ function spawnBird() {
   birdIndex = (birdIndex + 1) % birdHeights.length;
 }
 
+function spawnCloud() {
+  clouds.push({
+    x: canvas.width,
+    y: 40 + Math.random() * 60,
+    w: 40 + Math.random() * 20
+  });
+}
+
+function spawnStone() {
+  stones.push({
+    x: canvas.width,
+    y: 252,
+    w: 3 + Math.random() * 4
+  });
+}
+
 /* ---------- DRAW ---------- */
-function drawBird(bird, color) {
-  const wing = bird.frame < 10 ? -4 : 0;
+function drawBird(b, color) {
+  const wing = b.frame < 10 ? -4 : 0;
   ctx.fillStyle = color;
-  ctx.fillRect(bird.x, bird.y, 18, 6);
-  ctx.fillRect(bird.x + 4, bird.y + wing, 6, 4);
-  ctx.fillRect(bird.x + 12, bird.y + wing, 6, 4);
+  ctx.fillRect(b.x, b.y, 18, 6);
+  ctx.fillRect(b.x + 4, b.y + wing, 6, 4);
+  ctx.fillRect(b.x + 12, b.y + wing, 6, 4);
 }
 
 /* ---------- LOOP ---------- */
 function loop() {
   if (!running) return;
 
-  // Night toggle
+  // Day / Night toggle
   if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
     if (isNight) generateStars();
@@ -114,7 +129,7 @@ function loop() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars + moon
+  // Stars + Moon / Sun
   if (isNight) {
     ctx.fillStyle = "#fff";
     stars.forEach(s => {
@@ -122,18 +137,36 @@ function loop() {
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     });
-
-    ctx.beginPath();
-    ctx.arc(720, 60, 16, 0, Math.PI * 2);
-    ctx.fill();
   }
 
-  // Ground
+  ctx.fillStyle = isNight ? "#fff" : "#ffeb3b";
+  ctx.beginPath();
+  ctx.arc(720, 60, 16, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Clouds
+  if (Math.random() < 0.01) spawnCloud();
+  clouds.forEach(c => {
+    c.x -= 0.3;
+    ctx.fillStyle = fg;
+    ctx.fillRect(c.x, c.y, c.w, 6);
+  });
+  clouds = clouds.filter(c => c.x + c.w > 0);
+
+  // Ground path
   ctx.fillStyle = fg;
   for (let i = 0; i < canvas.width; i += 20) {
     ctx.fillRect(i - groundOffset, 260, 10, 2);
   }
   groundOffset = (groundOffset + speed) % 20;
+
+  // Stones
+  if (Math.random() < 0.05) spawnStone();
+  stones.forEach(s => {
+    s.x -= speed;
+    ctx.fillRect(s.x, s.y, s.w, 2);
+  });
+  stones = stones.filter(s => s.x + s.w > 0);
 
   // Player physics
   player.vy += gravity;
@@ -189,6 +222,8 @@ function startGame() {
   overlay.style.display = "none";
   cacti = [];
   birds = [];
+  clouds = [];
+  stones = [];
   score = 0;
   speed = 6;
   groundOffset = 0;
