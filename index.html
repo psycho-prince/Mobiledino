@@ -4,22 +4,33 @@
   <meta charset="UTF-8" />
   <title>Mobile Dino</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Styles -->
   <link rel="stylesheet" href="style.css" />
 </head>
 <body>
 
-<div id="startScreen">
-  <h1>Mobile Dino 🦖</h1>
+  <!-- START SCREEN -->
+  <div id="startScreen">
+    <h1>🦖 Mobile Dino</h1>
 
-  <!-- Character Select -->
-  <div id="characterSelect"></div>
+    <p class="subtitle">Choose your character</p>
 
-  <p>Tap / Press to jump</p>
-  <button id="startBtn">PLAY</button>
-</div>
+    <!-- PLAYER SELECT -->
+    <div id="playerSelect">
+      <button onclick="selectPlayer('p1')">OG Player</button>
+      <button onclick="selectPlayer('p2')">Friend 🔒</button>
+    </div>
 
-<canvas id="game" width="800" height="300"></canvas>
+    <p class="hint">Tap / Press any key to jump</p>
 
-<script src="game.js"></script>
+    <button id="startBtn">PLAY</button>
+  </div>
+
+  <!-- GAME CANVAS -->
+  <canvas id="game" width="800" height="300"></canvas>
+
+  <!-- Script -->
+  <script src="game.js"></script>
 </body>
 </html>
