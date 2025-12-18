@@ -1,6 +1,5 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-
 ctx.imageSmoothingEnabled = false;
 
 const startScreen = document.getElementById("startScreen");
@@ -18,9 +17,13 @@ let gameRunning = false;
 let score = 0;
 let speed = 3.2;
 let isNight = false;
+let rageMode = false;
 
 // Physics
 const gravity = 0.9;
+
+// Screen shake
+let shakeFrames = 0;
 
 // Player
 const player = {
@@ -32,14 +35,28 @@ const player = {
   jumping: false
 };
 
-// Obstacles
+// Obstacles & environment
 let obstacles = [];
-let spawnTimer = null;
-
-// Environment
-let groundOffset = 0;
 let clouds = [];
 let rocks = [];
+let stars = [];
+let groundOffset = 0;
+let spawnTimer = null;
+
+// Malayalam death messages
+const deathMessages = [
+  "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😂",
+  "കാക്ടസ് നിന്നെ കളിയാക്കി 🌵",
+  "കണ്ണ് തുറന്ന് കളിക്കു ബ്രോ 😭",
+  "ചാടാൻ മറന്നോ അതോ പേടിച്ചോ 😆",
+  "ഇതെന്താ slow motion കളി ആണോ 😜",
+  "ഇന്നും കാക്ടസ് ജയിച്ചു 💀",
+  "അയ്യോ… നേരെ കയറി 🫠"
+];
+
+// Easter egg sequence (tap 5 times fast)
+let tapCount = 0;
+let lastTap = 0;
 
 // ---------- SPAWN ----------
 
@@ -50,7 +67,7 @@ function spawnObstacle() {
     obstacles.push({
       type: "fly",
       x: canvas.width,
-      y: 175 + Math.random() * 25,
+      y: 170 + Math.random() * 30,
       w: 30,
       h: 15
     });
@@ -66,7 +83,6 @@ function spawnObstacle() {
   }
 }
 
-// Clouds
 function spawnCloud() {
   clouds.push({
     x: canvas.width,
@@ -75,13 +91,23 @@ function spawnCloud() {
   });
 }
 
-// Rocks
 function spawnRock() {
   rocks.push({
     x: canvas.width,
     y: 248,
     w: 4 + Math.random() * 4
   });
+}
+
+function spawnStars() {
+  stars = [];
+  for (let i = 0; i < 30; i++) {
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * 120,
+      r: Math.random() * 1.5 + 0.5
+    });
+  }
 }
 
 // ---------- COLLISION ----------
@@ -101,25 +127,27 @@ function resetGame() {
   obstacles = [];
   clouds = [];
   rocks = [];
+  groundOffset = 0;
   score = 0;
   speed = 3.2;
   isNight = false;
-  groundOffset = 0;
+  rageMode = false;
+  shakeFrames = 0;
   player.y = 220;
   player.vy = 0;
   player.jumping = false;
+  spawnStars();
 }
 
 // ---------- DRAW HELPERS ----------
 
 function drawCactus(o, color) {
   ctx.fillStyle = color;
-
   ctx.fillRect(o.x, o.y, 18, 40);
 
   if (o.variant === "double") {
     ctx.fillRect(o.x - 10, o.y + 12, 10, 8);
-    ctx.fillRect(o.x - 6,  o.y + 20, 6, 12);
+    ctx.fillRect(o.x - 6, o.y + 20, 6, 12);
     ctx.fillRect(o.x + 18, o.y + 18, 8, 10);
     ctx.fillRect(o.x + 18, o.y + 26, 5, 8);
   } else {
@@ -161,6 +189,22 @@ function drawRocks(color) {
   rocks = rocks.filter(r => r.x + r.w > 0);
 }
 
+function drawStars() {
+  ctx.fillStyle = "#fff";
+  stars.forEach(s => {
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  });
+}
+
+function drawMoon() {
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(700, 60, 18, 0, Math.PI * 2);
+  ctx.fill();
+}
+
 // ---------- GAME LOOP ----------
 
 function gameLoop() {
@@ -170,17 +214,30 @@ function gameLoop() {
     isNight = !isNight;
   }
 
+  // Rage mode unlock
+  if (score > 1200 && !rageMode) {
+    rageMode = true;
+    speed += 1.2;
+  }
+
   const bgColor = isNight ? "#000" : "#fff";
   const objColor = isNight ? "#fff" : "#000";
 
-  // Background
+  if (shakeFrames > 0) {
+    ctx.save();
+    ctx.translate(Math.random() * 4 - 2, Math.random() * 4 - 2);
+    shakeFrames--;
+  }
+
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Clouds
-  drawClouds(objColor);
+  if (isNight) {
+    drawStars();
+    drawMoon();
+  }
 
-  // Ground
+  drawClouds(objColor);
   drawGround(objColor);
 
   // Player physics
@@ -195,10 +252,8 @@ function gameLoop() {
 
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  // Rocks
   drawRocks(objColor);
 
-  // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
     if (o.type === "cactus") drawCactus(o, objColor);
@@ -206,22 +261,30 @@ function gameLoop() {
 
     if (isColliding(player, o)) {
       gameRunning = false;
+      shakeFrames = 14;
       endSound.currentTime = 0;
       endSound.play();
+
+      const msg = deathMessages[Math.floor(Math.random() * deathMessages.length)];
       startScreen.style.display = "flex";
-      startBtn.textContent = "RETRY";
+      startBtn.textContent = `RETRY – ${msg}`;
     }
   });
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
 
-  // Score & difficulty
   score++;
   speed += 0.0006;
 
   ctx.fillStyle = objColor;
   ctx.font = "14px system-ui";
   ctx.fillText(`Score: ${score}`, 10, 20);
+
+  if (rageMode) {
+    ctx.fillText("🔥 RAGE MODE 🔥", canvas.width - 130, 20);
+  }
+
+  if (shakeFrames > 0) ctx.restore();
 
   requestAnimationFrame(gameLoop);
 }
@@ -234,6 +297,18 @@ function jump() {
     player.jumping = true;
     jumpSound.currentTime = 0;
     jumpSound.play();
+  }
+
+  // Easter egg detection
+  const now = Date.now();
+  if (now - lastTap < 300) tapCount++;
+  else tapCount = 1;
+
+  lastTap = now;
+
+  if (tapCount === 5) {
+    speed += 2;
+    tapCount = 0;
   }
 }
 
