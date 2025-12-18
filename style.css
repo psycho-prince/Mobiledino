@@ -5,22 +5,12 @@
 
 html, body {
   margin: 0;
-  padding: 0;
   height: 100%;
   background: #111;
-  color: #fff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  color: #fff;
+  overflow: hidden;
 }
-
-#app {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-}
-
-/* Overlay */
 
 #overlay {
   position: fixed;
@@ -31,12 +21,8 @@ html, body {
   align-items: center;
   justify-content: center;
   z-index: 10;
-  padding: 20px;
   text-align: center;
-}
-
-#overlay h1 {
-  margin-bottom: 12px;
+  padding: 20px;
 }
 
 #message {
@@ -45,28 +31,25 @@ html, body {
   opacity: 0.9;
 }
 
-/* Button */
-
 button {
   padding: 14px 36px;
   font-size: 18px;
   border-radius: 16px;
   border: none;
-  cursor: pointer;
   background: #fff;
   color: #000;
   font-weight: 600;
+  cursor: pointer;
 }
 
 button:active {
   transform: scale(0.96);
 }
 
-/* Canvas */
-
 canvas {
+  display: block;
+  margin: 80px auto 0;
   background: #fff;
   border-radius: 12px;
   max-width: 100%;
-  height: auto;
 }
