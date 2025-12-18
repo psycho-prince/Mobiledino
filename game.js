@@ -43,6 +43,7 @@ let endSound = safeAudio(currentPlayer.end);
 let gameRunning = false;
 let score = 0;
 let speed = 3;
+
 let obstacleTimer = null;
 let cloudTimer = null;
 let rockTimer = null;
@@ -68,6 +69,11 @@ let birds = [];
 let clouds = [];
 let rocks = [];
 let stars = [];
+
+/* ---------- BIRD CONTROL ---------- */
+let lastBirdTime = 0;
+let birdCooldown = 2200;
+let lastBirdHigh = false;
 
 /* ---------- PLAYER SELECT ---------- */
 function clearSelection() {
@@ -105,11 +111,22 @@ function spawnObstacle() {
 }
 
 function spawnBird() {
+  const now = Date.now();
+  if (now - lastBirdTime < birdCooldown) return;
+
+  lastBirdTime = now;
+  lastBirdHigh = !lastBirdHigh;
+
+  const isFake = Math.random() < 0.15; // 15% fake bird
+
   birds.push({
     x: canvas.width,
-    y: 170 + Math.random() * 30,
+    y: isFake
+      ? 140                     // fake bird higher
+      : lastBirdHigh ? 160 : 200,
     w: 30,
-    h: 12
+    h: 12,
+    fake: isFake
   });
 }
 
@@ -158,7 +175,7 @@ function drawCactus(o, c) {
 }
 
 function drawBird(b, c) {
-  ctx.fillStyle = c;
+  ctx.fillStyle = b.fake ? "#888" : c; // fake bird looks faded
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y - 4, 6, 4);
   ctx.fillRect(b.x + 12, b.y - 4, 6, 4);
@@ -258,10 +275,12 @@ function gameLoop() {
     if (isColliding(player, o)) endGame();
   });
 
+  if (score > 300) spawnBird();
+
   birds.forEach(b => {
     b.x -= speed + 1;
     drawBird(b, fg);
-    if (isColliding(player, b)) endGame();
+    if (!b.fake && isColliding(player, b)) endGame();
   });
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
@@ -306,10 +325,13 @@ startBtn.onclick = () => {
   clouds = [];
   rocks = [];
   stars = [];
+
   score = 0;
   speed = 3;
   isNight = false;
   groundOffset = 0;
+  lastBirdTime = 0;
+  lastBirdHigh = false;
 
   player.y = 220;
   player.vy = 0;
@@ -323,15 +345,11 @@ startBtn.onclick = () => {
   endSound.play(); endSound.pause();
 
   gameRunning = true;
-  spawnObstacle();
 
+  spawnObstacle();
   obstacleTimer = setInterval(spawnObstacle, 1700);
   cloudTimer = setInterval(spawnCloud, 4000);
   rockTimer = setInterval(spawnRock, 1500);
-
-  setInterval(() => {
-    if (score > 300) spawnBird();
-  }, 2500);
 
   gameLoop();
 };
