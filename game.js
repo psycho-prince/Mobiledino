@@ -1,4 +1,4 @@
-/* ================= CORE ================= */
+/* ================= BASIC SETUP ================= */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
@@ -10,33 +10,44 @@ const deathMessageEl = document.getElementById("deathMessage");
 const scoreTextEl = document.getElementById("scoreText");
 
 /* ================= AUDIO ================= */
-function audio(src) {
-  const a = new Audio(src);
-  a.preload = "auto";
-  return a;
-}
+const jumpSound = new Audio("assets/jump.opus");
+const endSound = new Audio("assets/end.opus");
 
-/* ================= PLAYER SETUP ================= */
-const players = [
-  { id: "p1", img: "assets/player.png", jump: "assets/jump.opus", end: "assets/end.opus" },
-  { id: "p2", img: "assets/char_friend1.jpg", jump: "assets/char_friend1_jump.mp3", end: "assets/char_friend1_end.mp3", code: "4729" }
-];
+/* ================= CHARACTERS ================= */
+const characters = {
+  p1: { img: "assets/player.png" },
+  p2: { img: "assets/char_friend1.jpg", code: "4729" }
+};
 
-let currentPlayer = players[0];
+let activeChar = "p1";
 const playerImg = new Image();
-playerImg.src = currentPlayer.img;
+playerImg.src = characters.p1.img;
 
-let jumpSound = audio(currentPlayer.jump);
-let endSound = audio(currentPlayer.end);
+window.selectPlayer = function (id) {
+  const c = characters[id];
+  if (!c) return;
+
+  if (c.code && !localStorage.getItem("unlock_" + id)) {
+    if (prompt("Enter 4-digit code") !== c.code) return;
+    localStorage.setItem("unlock_" + id, "1");
+  }
+
+  document.querySelectorAll(".player-card").forEach(e => e.classList.remove("selected"));
+  document.getElementById("card-" + id).classList.add("selected");
+
+  activeChar = id;
+  playerImg.src = c.img;
+};
 
 /* ================= GAME STATE ================= */
 let running = false;
 let gameOver = false;
 let score = 0;
 let speed = 6;
-let gravity = 0.8;
+let gravity = 0.9;
 let groundOffset = 0;
 let isNight = false;
+
 let lastTime = 0;
 
 /* ================= PLAYER ================= */
@@ -49,16 +60,14 @@ const player = {
   jumping: false
 };
 
-/* ================= OBJECTS ================= */
+/* ================= WORLD OBJECTS ================= */
 let cacti = [];
 let birds = [];
+let clouds = [];
+let rocks = [];
 let stars = [];
 
-/* ================= TIMERS ================= */
-let cactusTimer = 0;
-let birdTimer = 0;
-
-/* ================= UTILS ================= */
+/* ================= HELPERS ================= */
 function collide(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -71,27 +80,37 @@ function collide(a, b) {
 function genStars() {
   stars = [];
   for (let i = 0; i < 30; i++) {
-    stars.push({ x: Math.random() * 800, y: Math.random() * 120, r: Math.random() * 1.5 + 0.5 });
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * 120,
+      r: Math.random() * 1.5 + 0.5
+    });
   }
 }
 
-/* ================= SPAWN ================= */
+/* ================= SPAWN LOGIC ================= */
 function spawnCactus() {
+  const last = cacti[cacti.length - 1];
+  const minGap = 200 + speed * 15;
+
+  if (last && last.x > canvas.width - minGap) return;
+
   const count = Math.random() < 0.6 ? 1 : Math.random() < 0.85 ? 2 : 3;
   cacti.push({
     x: canvas.width,
     y: 230,
+    count,
     w: count * 18,
-    h: 40,
-    count
+    h: 40
   });
 }
 
 function spawnBird() {
+  if (score < 300 || birds.length > 0) return;
   const heights = [200, 180, 160];
   birds.push({
     x: canvas.width,
-    y: heights[Math.floor(Math.random() * heights.length)],
+    y: heights[score % heights.length],
     w: 34,
     h: 14,
     frame: 0
@@ -99,46 +118,37 @@ function spawnBird() {
 }
 
 /* ================= DRAW ================= */
-function drawCactus(c, color) {
-  ctx.fillStyle = color;
+function drawCactus(c, col) {
+  ctx.fillStyle = col;
   for (let i = 0; i < c.count; i++) {
     ctx.fillRect(c.x + i * 18, c.y, 14, 40);
     ctx.fillRect(c.x + i * 18 + 10, c.y + 18, 6, 12);
   }
 }
 
-function drawBird(b, color) {
-  ctx.fillStyle = color;
+function drawBird(b, col) {
+  ctx.fillStyle = col;
   const wing = b.frame < 10 ? -4 : 0;
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y + wing, 6, 4);
   ctx.fillRect(b.x + 12, b.y + wing, 6, 4);
 }
 
-/* ================= LOOP ================= */
-function gameLoop(timestamp) {
+/* ================= MAIN LOOP ================= */
+function loop(t) {
   if (!running) return;
-  const delta = timestamp - lastTime;
-  lastTime = timestamp;
+  const delta = t - lastTime;
+  lastTime = t;
 
-  cactusTimer += delta;
-  birdTimer += delta;
+  score += delta * 0.02;
 
-  // Spawn logic (TIME-BASED, NEVER STOPS)
-  if (cactusTimer > 1400) {
-    spawnCactus();
-    cactusTimer = 0;
-  }
-
-  if (score > 300 && birdTimer > 2600) {
-    spawnBird();
-    birdTimer = 0;
-  }
-
-  // Day / Night
-  if (score > 0 && score % 700 === 0) {
+  if (Math.floor(score) % 600 === 0 && Math.floor(score) !== 0) {
     isNight = !isNight;
     if (isNight) genStars();
+  }
+
+  if (Math.floor(score) % 500 === 0 && Math.floor(score) !== 0) {
+    speed += 0.4;
   }
 
   const bg = isNight ? "#000" : "#fff";
@@ -161,6 +171,16 @@ function gameLoop(timestamp) {
     });
   }
 
+  // Clouds
+  clouds.forEach(c => {
+    c.x -= 0.3;
+    ctx.fillStyle = fg;
+    ctx.fillRect(c.x, c.y, c.w, 6);
+  });
+  if (Math.random() < 0.005) {
+    clouds.push({ x: canvas.width, y: 40 + Math.random() * 60, w: 40 });
+  }
+
   // Ground
   ctx.fillStyle = fg;
   for (let i = 0; i < canvas.width; i += 20) {
@@ -178,14 +198,16 @@ function gameLoop(timestamp) {
   }
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  // Cactus
+  // Obstacles
+  spawnCactus();
+  spawnBird();
+
   cacti.forEach(c => {
     c.x -= speed;
     drawCactus(c, fg);
     if (collide(player, c)) endGame();
   });
 
-  // Birds (animated)
   birds.forEach(b => {
     b.x -= speed + 1;
     b.frame = (b.frame + 1) % 20;
@@ -195,30 +217,24 @@ function gameLoop(timestamp) {
 
   cacti = cacti.filter(c => c.x + c.w > 0);
   birds = birds.filter(b => b.x + b.w > 0);
-
-  score++;
-  if (score % 500 === 0) speed += 0.6;
+  clouds = clouds.filter(c => c.x + c.w > 0);
 
   ctx.fillStyle = fg;
-  ctx.fillText("Score: " + score, 10, 20);
+  ctx.fillText("Score: " + Math.floor(score), 10, 20);
 
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 }
 
-/* ================= END ================= */
+/* ================= END GAME ================= */
 function endGame() {
   if (gameOver) return;
   gameOver = true;
   running = false;
-
   endSound.play();
 
   setTimeout(() => {
     deathMessageEl.textContent = "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭";
-    scoreTextEl.textContent = "Score: " + score;
-    deathMessageEl.style.display = scoreTextEl.style.display = "block";
-    startBtn.style.display = "none";
-    retryBtn.style.display = homeBtn.style.display = "inline-block";
+    scoreTextEl.textContent = "Score: " + Math.floor(score);
     startScreen.style.display = "flex";
   }, 900);
 }
@@ -232,23 +248,21 @@ function jump() {
     jumpSound.play();
   }
 }
-
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-/* ================= BUTTONS ================= */
+/* ================= START ================= */
 startBtn.onclick = retryBtn.onclick = () => {
   startScreen.style.display = "none";
   cacti = [];
   birds = [];
+  clouds = [];
   score = 0;
   speed = 6;
-  cactusTimer = 0;
-  birdTimer = 0;
   running = true;
   gameOver = false;
   lastTime = performance.now();
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 };
 
 homeBtn.onclick = () => location.reload();
