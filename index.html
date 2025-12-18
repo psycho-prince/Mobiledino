@@ -3,18 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <title>Mallu Dino</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="Mallu Dino – a fun Chrome Dino–style game with Malayalam vibes">
+
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-<div id="overlay">
-  <h1>🦖 Mallu Dino</h1>
-  <p id="message">Tap anywhere or press Space to jump</p>
-  <button id="playBtn">PLAY</button>
-</div>
+<main id="app">
+  <div id="overlay" role="dialog" aria-live="polite">
+    <h1>🦖 Mallu Dino</h1>
+    <p id="message">Tap anywhere or press Space to jump</p>
+    <button id="playBtn" aria-label="Start game">PLAY</button>
+  </div>
 
-<canvas id="game" width="800" height="300"></canvas>
+  <canvas id="game" width="800" height="300" aria-label="Game canvas"></canvas>
+</main>
 
 <script src="game.js"></script>
 </body>
