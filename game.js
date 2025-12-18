@@ -8,7 +8,7 @@ const message = document.getElementById("message");
 
 /* AUDIO */
 const jumpSound = new Audio("assets/jump.opus");
-const endSound = new Audio("assets/end.opus");
+const endSound = new Audio("assets/end.mp3");
 
 /* PLAYER IMAGE */
 const playerImg = new Image();
