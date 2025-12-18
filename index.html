@@ -1,37 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Mobile Dino</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mobile Dino Runner - Enhanced</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div id="startScreen">
-  <h1>🦖 Mobile Dino</h1>
-
-  <div id="playerSelect">
-    <div class="player-card selected" id="card-p1" onclick="selectPlayer('p1')">
-      <img src="assets/player.png">
-      <span>OG</span>
+  <canvas id="game" width="800" height="300"></canvas>
+  
+  <div id="startScreen">
+    <h1>Mobile Dino Runner</h1>
+    <div id="charSelect">
+      <div class="player-card selected" id="card-p1" onclick="selectPlayer('p1')">
+        <img src="assets/player.png" alt="OG Dino">
+        <p>OG Dino</p>
+      </div>
+      <div class="player-card locked" id="card-p2" onclick="selectPlayer('p2')">
+        <img src="assets/char_friend1.jpg" alt="Friend Dino">
+        <p>Friend 🔒</p>
+      </div>
     </div>
-
-    <div class="player-card locked" id="card-p2" onclick="selectPlayer('p2')">
-      <img src="assets/char_friend1.jpg">
-      <span>Friend 🔒</span>
+    <div id="deathMessage"></div>
+    <div id="scoreText"></div>
+    <div id="highScoreText"></div>
+    <div class="buttons">
+      <button id="startBtn">PLAY</button>
+      <button id="retryBtn" style="display:none;">RETRY</button>
+      <button id="homeBtn" style="display:none;">HOME</button>
     </div>
   </div>
-
-  <p id="deathMessage"></p>
-  <p id="scoreText"></p>
-
-  <button id="startBtn">PLAY</button>
-  <button id="retryBtn">RETRY</button>
-</div>
-
-<canvas id="game" width="800" height="300"></canvas>
-
-<script src="game.js"></script>
+  
+  <button id="soundToggle">Sound: ON</button>
+  
+  <script src="game.js"></script>
 </body>
 </html>
