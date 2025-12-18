@@ -8,26 +8,36 @@
 </head>
 <body>
 
+<!-- START / GAME OVER SCREEN -->
 <div id="startScreen">
-  <h1>🦖 Mobile Dino</h1>
-  <p class="subtitle">Select your character</p>
+  <h1 id="title">🦖 Mobile Dino</h1>
 
+  <!-- Character Select -->
   <div id="playerSelect">
-    <div class="player-card selected" onclick="selectPlayer('p1')" id="card-p1">
-      <img src="assets/player.png">
+    <div class="player-card selected" id="card-p1" onclick="selectPlayer('p1')">
+      <img src="assets/player.png" alt="Player 1">
       <span>OG Player</span>
     </div>
 
-    <div class="player-card locked" onclick="selectPlayer('p2')" id="card-p2">
-      <img src="assets/char_friend1.jpg">
+    <div class="player-card locked" id="card-p2" onclick="selectPlayer('p2')">
+      <img src="assets/char_friend1.jpg" alt="Player 2">
       <span>Friend 🔒</span>
     </div>
   </div>
 
-  <p class="hint">Tap / Press to jump</p>
-  <button id="startBtn">PLAY</button>
+  <!-- Death info (hidden initially) -->
+  <p id="deathMessage" class="death-text"></p>
+  <p id="scoreText" class="score-text"></p>
+
+  <!-- Buttons -->
+  <div id="menuButtons">
+    <button id="startBtn">PLAY</button>
+    <button id="retryBtn" style="display:none;">Retry</button>
+    <button id="homeBtn" style="display:none;">Main Menu</button>
+  </div>
 </div>
 
+<!-- GAME CANVAS -->
 <canvas id="game" width="800" height="300"></canvas>
 
 <script src="game.js"></script>
