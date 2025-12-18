@@ -261,7 +261,7 @@ function endGame() {
   running = false;
   endSound.currentTime = 0;
   endSound.play();
-  message.textContent = "💀 ചാടാൻ പറ്റില്ലേ ഡാ 😂 | Score: " + score;
+  message.textContent = "💀 ദിനോസറിന്റേ ഊംബ് 😂 | Score: " + score;
   playBtn.textContent = "RETRY";
   overlay.style.display = "flex";
 }
