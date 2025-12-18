@@ -1,24 +1,20 @@
+/* ---------- RESET ---------- */
 * {
   box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
   margin: 0;
+  padding: 0;
   background: #111;
   color: #fff;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   text-align: center;
   overflow: hidden;
 }
 
-canvas {
-  display: block;
-  margin: 80px auto;
-  background: #fff;
-  border-radius: 12px;
-}
-
-/* Start Screen */
+/* ---------- START SCREEN ---------- */
 #startScreen {
   position: fixed;
   inset: 0;
@@ -30,40 +26,69 @@ canvas {
   z-index: 10;
 }
 
-/* Character Select */
-#characterSelect {
+#startScreen h1 {
+  margin-bottom: 8px;
+}
+
+.subtitle {
+  opacity: 0.8;
+  margin-bottom: 12px;
+}
+
+.hint {
+  font-size: 13px;
+  opacity: 0.7;
+  margin-top: 10px;
+}
+
+/* ---------- PLAYER SELECT ---------- */
+#playerSelect {
   display: flex;
   gap: 16px;
-  margin: 20px 0;
+  margin: 12px 0 16px;
 }
 
-.character {
-  width: 80px;
-  cursor: pointer;
-}
-
-.character img {
-  width: 80px;
-  height: 80px;
-  border-radius: 50%;
-  border: 3px solid #fff;
-  object-fit: cover;
-}
-
-.character.locked img {
-  filter: grayscale(1) blur(1px);
-}
-
-.character span {
-  display: block;
-  font-size: 12px;
-  margin-top: 6px;
-}
-
-button {
-  padding: 12px 28px;
-  font-size: 18px;
-  border: none;
+#playerSelect button {
+  padding: 10px 16px;
+  font-size: 14px;
   border-radius: 10px;
+  border: none;
   cursor: pointer;
+  background: #222;
+  color: #fff;
+  transition: transform 0.1s ease, background 0.1s ease;
+}
+
+#playerSelect button:hover {
+  background: #333;
+}
+
+#playerSelect button:active {
+  transform: scale(0.95);
+}
+
+/* ---------- PLAY BUTTON ---------- */
+#startBtn {
+  margin-top: 8px;
+  padding: 14px 36px;
+  font-size: 18px;
+  font-weight: 600;
+  border-radius: 14px;
+  border: none;
+  cursor: pointer;
+  background: #fff;
+  color: #000;
+}
+
+#startBtn:active {
+  transform: scale(0.96);
+}
+
+/* ---------- CANVAS ---------- */
+canvas {
+  display: block;
+  margin: 80px auto;
+  background: #fff;
+  border-radius: 12px;
+  max-width: 100%;
 }
