@@ -1,3 +1,4 @@
+
 * { box-sizing: border-box; }
 
 body {
@@ -23,7 +24,7 @@ body {
 #playerSelect {
   display: flex;
   gap: 16px;
-  margin: 12px 0;
+  margin: 14px 0;
 }
 
 .player-card {
@@ -39,10 +40,17 @@ body {
   object-fit: cover;
 }
 
-.player-card.selected img { border-color: #00ff88; }
-.player-card.locked img { filter: grayscale(1); opacity: 0.4; }
+.player-card.selected img {
+  border-color: #00ff88;
+}
 
-#deathMessage, #scoreText {
+.player-card.locked img {
+  filter: grayscale(1);
+  opacity: 0.4;
+}
+
+#deathMessage,
+#scoreText {
   display: none;
   font-size: 14px;
   margin: 6px 0;
