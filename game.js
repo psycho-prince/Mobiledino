@@ -37,17 +37,17 @@ const player = {
 let obstacles = [];
 let spawnTimer = null;
 
-// ----------- SPAWN LOGIC -----------
+// -------- SPAWN --------
 
 function spawnObstacle() {
-  const typeChance = Math.random();
+  const chance = Math.random();
 
-  // 20% chance for flying enemy after score threshold
-  if (score > 400 && typeChance > 0.8) {
+  // Flying enemy (after score threshold)
+  if (score > 400 && chance > 0.8) {
     obstacles.push({
       type: "fly",
       x: canvas.width,
-      y: 180 + Math.random() * 20,
+      y: 175 + Math.random() * 25,
       w: 30,
       h: 15
     });
@@ -63,7 +63,7 @@ function spawnObstacle() {
   }
 }
 
-// ----------- COLLISION -----------
+// -------- COLLISION --------
 
 function isColliding(a, b) {
   return (
@@ -74,7 +74,7 @@ function isColliding(a, b) {
   );
 }
 
-// ----------- RESET -----------
+// -------- RESET --------
 
 function resetGame() {
   obstacles = [];
@@ -86,10 +86,10 @@ function resetGame() {
   player.jumping = false;
 }
 
-// ----------- DRAWING -----------
+// -------- DRAWING --------
 
-function drawCactus(o) {
-  ctx.fillStyle = "#fff";
+function drawCactus(o, color) {
+  ctx.fillStyle = color;
 
   // main stem
   ctx.fillRect(o.x, o.y, 18, 40);
@@ -97,7 +97,7 @@ function drawCactus(o) {
   if (o.variant === "double") {
     // left arm
     ctx.fillRect(o.x - 10, o.y + 12, 10, 8);
-    ctx.fillRect(o.x - 6,  o.y + 20, 6, 12);
+    ctx.fillRect(o.x - 6, o.y + 20, 6, 12);
 
     // right arm
     ctx.fillRect(o.x + 18, o.y + 18, 8, 10);
@@ -108,8 +108,8 @@ function drawCactus(o) {
   }
 }
 
-function drawFly(o) {
-  ctx.fillStyle = "#fff";
+function drawFly(o, color) {
+  ctx.fillStyle = color;
 
   // body
   ctx.fillRect(o.x, o.y, 18, 6);
@@ -119,20 +119,23 @@ function drawFly(o) {
   ctx.fillRect(o.x + 10, o.y - 4, 6, 4);
 }
 
-// ----------- GAME LOOP -----------
+// -------- GAME LOOP --------
 
 function gameLoop() {
   if (!gameRunning) return;
 
-  // Day / Night cycle
-  if (score % 600 === 0 && score !== 0) {
+  // Toggle day/night every ~600 score
+  if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
   }
 
-  ctx.fillStyle = isNight ? "#fff" : "#222";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Background + object colors
+  const bgColor = isNight ? "#111" : "#eee";
+  const objColor = isNight ? "#fff" : "#000";
 
-  ctx.fillStyle = isNight ? "#000" : "#fff";
+  // Background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
 
   // Player physics
   player.vy += gravity;
@@ -144,14 +147,15 @@ function gameLoop() {
     player.jumping = false;
   }
 
+  // Draw player
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
   // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
 
-    if (o.type === "cactus") drawCactus(o);
-    if (o.type === "fly") drawFly(o);
+    if (o.type === "cactus") drawCactus(o, objColor);
+    if (o.type === "fly") drawFly(o, objColor);
 
     if (isColliding(player, o)) {
       gameRunning = false;
@@ -168,13 +172,14 @@ function gameLoop() {
   score++;
   speed += 0.0006;
 
+  ctx.fillStyle = objColor;
   ctx.font = "14px system-ui";
   ctx.fillText(`Score: ${score}`, 10, 20);
 
   requestAnimationFrame(gameLoop);
 }
 
-// ----------- INPUT -----------
+// -------- INPUT --------
 
 function jump() {
   if (!player.jumping && gameRunning) {
@@ -188,14 +193,14 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-// ----------- START -----------
+// -------- START --------
 
 startBtn.onclick = () => {
   startScreen.style.display = "none";
   resetGame();
   gameRunning = true;
 
-  // Unlock audio
+  // Unlock audio (mobile)
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
