@@ -2,11 +2,11 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
+/* UI */
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 const retryBtn = document.getElementById("retryBtn");
 const homeBtn = document.getElementById("homeBtn");
-
 const deathMessageEl = document.getElementById("deathMessage");
 const scoreTextEl = document.getElementById("scoreText");
 
@@ -33,7 +33,6 @@ let endSound = audio(currentPlayer.end);
 /* ================= DEATH MESSAGES ================= */
 const deathMessages = [
   "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
-  "കണ്ണ് തുറന്ന് കളിച്ചാൽ മതിയായിരുന്നു 👀",
   "കാക്ടസ്: 1 | നീ: 0 💀",
   "ഇന്നും reflex vacation എടുത്തു 🏖️",
   "GG bro, next life try 😵"
@@ -51,12 +50,8 @@ const gravity = 0.9;
 
 /* ================= PLAYER ================= */
 const player = {
-  x: 50,
-  y: 220,
-  w: 44,
-  h: 44,
-  vy: 0,
-  jumping: false
+  x: 50, y: 220, w: 44, h: 44,
+  vy: 0, jumping: false
 };
 
 /* ================= OBJECTS ================= */
@@ -66,51 +61,39 @@ let clouds = [];
 let rocks = [];
 let stars = [];
 
-/* ================= OG PATTERNS ================= */
-let lastCactusX = 0;
-let birdHeights = [200, 180, 160];
-let birdIndex = 0;
-
-/* ================= CHARACTER SELECT ================= */
-window.selectPlayer = function (id) {
-  const p = players.find(x => x.id === id);
-  if (!p) return;
-
-  if (p.code && !localStorage.getItem("unlock_" + p.id)) {
-    if (prompt("Enter 4-digit code") !== p.code) return;
-    localStorage.setItem("unlock_" + p.id, "1");
-  }
-
-  document.querySelectorAll(".player-card").forEach(c => c.classList.remove("selected"));
-  document.getElementById("card-" + id).classList.add("selected");
-
-  currentPlayer = p;
-  playerImg.src = p.img;
-  jumpSound = audio(p.jump);
-  endSound = audio(p.end);
-};
-
 /* ================= HELPERS ================= */
 function collide(a, b) {
-  return a.x < b.x + b.w &&
-         a.x + a.w > b.x &&
-         a.y < b.y + b.h &&
-         a.y + a.h > b.y;
+  return (
+    a.x < b.x + b.w &&
+    a.x + a.w > b.x &&
+    a.y < b.y + b.h &&
+    a.y + a.h > b.y
+  );
 }
 
 function generateStars() {
   stars = [];
   for (let i = 0; i < 30; i++) {
-    stars.push({ x: Math.random() * 800, y: Math.random() * 120, r: Math.random() * 1.5 + 0.5 });
+    stars.push({
+      x: Math.random() * canvas.width,
+      y: Math.random() * 120,
+      r: Math.random() * 1.5 + 0.5
+    });
   }
 }
 
 /* ================= SPAWN ================= */
 function spawnCactus() {
-  const gap = 180 + Math.random() * 120 + speed * 15;
-  if (canvas.width - lastCactusX < gap) return;
+  // OG rule: check LAST cactus distance
+  const last = cacti[cacti.length - 1];
+  const minGap = 180 + speed * 20;
 
-  const count = Math.random() < 0.6 ? 1 : Math.random() < 0.85 ? 2 : 3;
+  if (last && last.x > canvas.width - minGap) return;
+
+  const count =
+    Math.random() < 0.6 ? 1 :
+    Math.random() < 0.85 ? 2 : 3;
+
   cacti.push({
     x: canvas.width,
     y: 230,
@@ -118,20 +101,19 @@ function spawnCactus() {
     w: count * 18,
     h: 40
   });
-  lastCactusX = canvas.width;
 }
 
 function spawnBird() {
-  if (score < 300 || birds.length > 0) return;
+  if (score < 300) return;
+  if (birds.length > 0) return;
 
+  const heights = [200, 180, 160];
   birds.push({
     x: canvas.width,
-    y: birdHeights[birdIndex],
+    y: heights[score % heights.length],
     w: 34,
     h: 14
   });
-
-  birdIndex = (birdIndex + 1) % birdHeights.length;
 }
 
 /* ================= DRAW ================= */
@@ -154,6 +136,7 @@ function drawBird(b, color) {
 function loop() {
   if (!running) return;
 
+  // Day / Night toggle
   if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
     if (isNight) generateStars();
@@ -163,7 +146,13 @@ function loop() {
   const fg = isNight ? "#fff" : "#000";
 
   ctx.fillStyle = bg;
-  ctx.fillRect(0, 0, 800, 300);
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Sun / Moon
+  ctx.fillStyle = isNight ? "#fff" : "#ffeb3b";
+  ctx.beginPath();
+  ctx.arc(720, 60, 18, 0, Math.PI * 2);
+  ctx.fill();
 
   if (isNight) {
     ctx.fillStyle = "#fff";
@@ -172,22 +161,16 @@ function loop() {
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
     });
-    ctx.beginPath();
-    ctx.arc(720, 60, 18, 0, Math.PI * 2);
-    ctx.fill();
-  } else {
-    ctx.fillStyle = "#ffeb3b";
-    ctx.beginPath();
-    ctx.arc(720, 60, 18, 0, Math.PI * 2);
-    ctx.fill();
   }
 
+  // Ground
   ctx.fillStyle = fg;
-  for (let i = 0; i < 800; i += 20) {
+  for (let i = 0; i < canvas.width; i += 20) {
     ctx.fillRect(i - groundOffset, 260, 10, 2);
   }
   groundOffset = (groundOffset + speed) % 20;
 
+  // Player physics
   player.vy += gravity;
   player.y += player.vy;
   if (player.y >= 220) {
@@ -195,27 +178,30 @@ function loop() {
     player.vy = 0;
     player.jumping = false;
   }
-
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
+  // Cactus
   cacti.forEach(c => {
     c.x -= speed;
     drawCactus(c, fg);
     if (collide(player, c)) endGame();
   });
 
+  // Birds
   birds.forEach(b => {
     b.x -= speed + 1;
     drawBird(b, fg);
     if (collide(player, b)) endGame();
   });
 
+  // Cleanup
   cacti = cacti.filter(c => c.x + c.w > 0);
   birds = birds.filter(b => b.x + b.w > 0);
 
   spawnCactus();
   spawnBird();
 
+  // Speed milestones
   if (score === 500 || score === 1000 || score === 1500) speed += 0.8;
 
   score++;
