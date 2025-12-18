@@ -19,9 +19,9 @@ const players = [
   {
     id: "p2",
     name: "Friend 😈",
-    img: "assets/char_friend1.png",
-    jump: "assets/char_friend1_jump.opus",
-    end: "assets/char_friend1_end.opus",
+    img: "assets/char_friend1.jpg",
+    jump: "assets/char_friend1_jump.mp3",
+    end: "assets/char_friend1_end.mp3",
     code: "4729"
   }
 ];
