@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
   <meta charset="UTF-8">
   <title>Mobile Dino</title>
@@ -9,13 +9,12 @@
 <body>
 
 <div id="startScreen">
-  <h1 id="title">🦖 Mobile Dino</h1>
+  <h1>🦖 Mobile Dino</h1>
 
-  <!-- Character Select -->
   <div id="playerSelect">
     <div class="player-card selected" id="card-p1" onclick="selectPlayer('p1')">
       <img src="assets/player.png">
-      <span>OG Player</span>
+      <span>OG</span>
     </div>
 
     <div class="player-card locked" id="card-p2" onclick="selectPlayer('p2')">
@@ -24,16 +23,11 @@
     </div>
   </div>
 
-  <!-- Death info -->
   <p id="deathMessage"></p>
   <p id="scoreText"></p>
 
-  <!-- Buttons -->
-  <div id="menuButtons">
-    <button id="startBtn">PLAY</button>
-    <button id="retryBtn">Retry</button>
-    <button id="homeBtn">Main Menu</button>
-  </div>
+  <button id="startBtn">PLAY</button>
+  <button id="retryBtn">RETRY</button>
 </div>
 
 <canvas id="game" width="800" height="300"></canvas>
