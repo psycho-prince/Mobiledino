@@ -6,18 +6,17 @@ const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("playBtn");
 const message = document.getElementById("message");
 
-/* ---------- AUDIO ---------- */
+/* AUDIO */
 const jumpSound = new Audio("assets/jump.opus");
 const endSound = new Audio("assets/end.opus");
 
-/* ---------- PLAYER IMAGE ---------- */
+/* PLAYER IMAGE */
 const playerImg = new Image();
 playerImg.src = "assets/player.png";
 let playerImgReady = false;
+playerImg.onload = () => playerImgReady = true;
 
-playerImg.onload = () => (playerImgReady = true);
-
-/* ---------- GAME STATE ---------- */
+/* GAME STATE */
 let running = false;
 let score = 0;
 let speed = 6;
@@ -25,43 +24,38 @@ let gravity = 0.9;
 let groundOffset = 0;
 let isNight = false;
 
-/* ---------- PLAYER ---------- */
+/* PLAYER */
 const player = {
-  x: 50,
-  y: 220,
-  w: 40,
-  h: 40,
+  x: 50, y: 220, w: 40, h: 40,
   vy: 0,
   jumping: false,
   runFrame: 0,
   runTick: 0
 };
 
-/* ---------- OBJECTS ---------- */
+/* OBJECTS */
 let cacti = [];
 let birds = [];
 let clouds = [];
 let stones = [];
 let stars = [];
 
-/* ---------- BIRD CONTROL ---------- */
+/* BIRD CONTROL (OG-ACCURATE) */
 const birdHeights = [200, 180];
 let birdIndex = 0;
 let birdCooldown = 0;
 
-/* ---------- MEME DEATH MESSAGES ---------- */
+/* MEMES */
 const memes = [
   "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
   "Skill issue bro 🤡",
-  "Kaktoos: 1  |  Nee: 0 🌵",
+  "Kaktoos: 1 | Nee: 0 🌵",
   "Bird പറന്നു… നീ വീണു 🐦",
   "Reflex vacation എടുത്തു 🏖️",
   "GG bro, next life try 😵",
   "Jump button exists btw 😶",
-  "Slow internet alle problem 😌",
-  "Practice makes perfect… today not 😭",
-  "Chrome Dino proud of you 🫡",
-  "ഇത് speed run അല്ല bro 😂",
+  "Chrome Dino disappointed 🫠",
+  "ഇത് speed run അല്ല 😂",
   "Ayyo… നേരെ കയറി 💀"
 ];
 
@@ -69,7 +63,7 @@ function randomMeme() {
   return memes[Math.floor(Math.random() * memes.length)];
 }
 
-/* ---------- HELPERS ---------- */
+/* HELPERS */
 function collide(a, b) {
   return (
     a.x < b.x + b.w &&
@@ -79,7 +73,7 @@ function collide(a, b) {
   );
 }
 
-function generateStars() {
+function genStars() {
   stars = [];
   for (let i = 0; i < 30; i++) {
     stars.push({
@@ -90,34 +84,22 @@ function generateStars() {
   }
 }
 
-/* ---------- SPAWN ---------- */
+/* SPAWN */
 function spawnCactus() {
   const last = cacti[cacti.length - 1];
   if (last && last.x > 520) return;
-
-  cacti.push({
-    x: canvas.width,
-    y: 230,
-    w: 18,
-    h: 40
-  });
+  cacti.push({ x: canvas.width, y: 230, w: 18, h: 40 });
 }
 
 function spawnBird() {
-  if (score < 400) return;
-  if (birds.length > 0) return;
-  if (birdCooldown > 0) return;
-
+  if (score < 400 || birds.length > 0 || birdCooldown > 0) return;
   birds.push({
     x: canvas.width,
     y: birdHeights[birdIndex],
-    w: 34,
-    h: 14,
-    frame: 0
+    w: 34, h: 14, frame: 0
   });
-
   birdIndex = (birdIndex + 1) % birdHeights.length;
-  birdCooldown = 240; // big gap between birds
+  birdCooldown = 260;
 }
 
 function spawnCloud() {
@@ -129,34 +111,29 @@ function spawnCloud() {
 }
 
 function spawnStone() {
-  stones.push({
-    x: canvas.width,
-    y: 252,
-    w: 3 + Math.random() * 4
-  });
+  stones.push({ x: canvas.width, y: 252, w: 3 + Math.random() * 4 });
 }
 
-/* ---------- DRAW ---------- */
-function drawBird(b, color) {
+/* DRAW */
+function drawBird(b, col) {
   const wing = b.frame < 12 ? -4 : 0;
-  ctx.fillStyle = color;
+  ctx.fillStyle = col;
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y + wing, 6, 4);
   ctx.fillRect(b.x + 12, b.y + wing, 6, 4);
 }
 
-/* ---------- MAIN LOOP ---------- */
+/* LOOP */
 function loop() {
   if (!running) return;
 
   score++;
+  if (birdCooldown > 0) birdCooldown--;
 
   if (score % 600 === 0) {
     isNight = !isNight;
-    if (isNight) generateStars();
+    if (isNight) genStars();
   }
-
-  if (birdCooldown > 0) birdCooldown--;
 
   const bg = isNight ? "#000" : "#fff";
   const fg = isNight ? "#fff" : "#000";
@@ -164,7 +141,6 @@ function loop() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars + Sun/Moon
   if (isNight) {
     ctx.fillStyle = "#fff";
     stars.forEach(s => {
@@ -179,7 +155,6 @@ function loop() {
   ctx.arc(720, 60, 16, 0, Math.PI * 2);
   ctx.fill();
 
-  // Clouds
   if (Math.random() < 0.01) spawnCloud();
   clouds.forEach(c => {
     c.x -= 0.25;
@@ -188,14 +163,12 @@ function loop() {
   });
   clouds = clouds.filter(c => c.x + c.w > 0);
 
-  // Ground
   ctx.fillStyle = fg;
   for (let i = 0; i < canvas.width; i += 20) {
     ctx.fillRect(i - groundOffset, 260, 10, 2);
   }
   groundOffset = (groundOffset + speed) % 20;
 
-  // Stones
   if (Math.random() < 0.04) spawnStone();
   stones.forEach(s => {
     s.x -= speed;
@@ -203,7 +176,6 @@ function loop() {
   });
   stones = stones.filter(s => s.x + s.w > 0);
 
-  // Player physics
   player.vy += gravity;
   player.y += player.vy;
   if (player.y >= 220) {
@@ -212,35 +184,25 @@ function loop() {
     player.jumping = false;
   }
 
-  // Running animation
   if (!player.jumping) {
     player.runTick++;
-    if (player.runTick % 6 === 0) {
-      player.runFrame = 1 - player.runFrame;
-    }
+    if (player.runTick % 6 === 0) player.runFrame ^= 1;
   }
 
-  // Player render
   if (playerImgReady) {
     ctx.save();
     ctx.shadowColor = isNight ? "#0f0" : "#000";
-    ctx.shadowBlur = 6;
-
-    const legOffset = player.runFrame === 0 ? 0 : 2;
+    ctx.shadowBlur = 4;
     ctx.drawImage(
       playerImg,
       player.x,
-      player.y + legOffset,
+      player.y + (player.runFrame ? 2 : 0),
       player.w,
       player.h
     );
     ctx.restore();
-  } else {
-    ctx.fillStyle = fg;
-    ctx.fillRect(player.x, player.y, player.w, player.h);
   }
 
-  // Cactus
   spawnCactus();
   cacti.forEach(c => {
     c.x -= speed;
@@ -249,24 +211,23 @@ function loop() {
   });
   cacti = cacti.filter(c => c.x + c.w > 0);
 
-  // Birds (slower than cactus)
   spawnBird();
   birds.forEach(b => {
-    b.x -= speed * 0.7;
+    const birdSpeed = Math.min(4.2, speed * 0.45);
+    b.x -= birdSpeed;
     b.frame = (b.frame + 1) % 24;
     drawBird(b, fg);
     if (collide(player, b)) endGame();
   });
   birds = birds.filter(b => b.x + b.w > 0);
 
-  // HUD
   ctx.fillStyle = fg;
   ctx.fillText("Score: " + score, 10, 20);
 
   requestAnimationFrame(loop);
 }
 
-/* ---------- INPUT ---------- */
+/* INPUT */
 function jump() {
   if (!player.jumping && running) {
     player.vy = -18;
@@ -278,7 +239,7 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-/* ---------- GAME CONTROL ---------- */
+/* CONTROL */
 function startGame() {
   overlay.style.display = "none";
   cacti = [];
@@ -291,7 +252,6 @@ function startGame() {
   isNight = false;
   birdCooldown = 0;
 
-  // unlock audio on mobile
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
