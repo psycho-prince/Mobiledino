@@ -36,6 +36,11 @@ const player = {
 let obstacles = [];
 let spawnTimer = null;
 
+// Environment
+let groundOffset = 0;
+let clouds = [];
+let rocks = [];
+
 // ---------- SPAWN ----------
 
 function spawnObstacle() {
@@ -61,6 +66,24 @@ function spawnObstacle() {
   }
 }
 
+// Clouds
+function spawnCloud() {
+  clouds.push({
+    x: canvas.width,
+    y: 40 + Math.random() * 40,
+    w: 30 + Math.random() * 20
+  });
+}
+
+// Rocks
+function spawnRock() {
+  rocks.push({
+    x: canvas.width,
+    y: 248,
+    w: 4 + Math.random() * 4
+  });
+}
+
 // ---------- COLLISION ----------
 
 function isColliding(a, b) {
@@ -76,42 +99,66 @@ function isColliding(a, b) {
 
 function resetGame() {
   obstacles = [];
+  clouds = [];
+  rocks = [];
   score = 0;
   speed = 3.2;
   isNight = false;
+  groundOffset = 0;
   player.y = 220;
   player.vy = 0;
   player.jumping = false;
 }
 
-// ---------- DRAW ----------
+// ---------- DRAW HELPERS ----------
 
 function drawCactus(o, color) {
   ctx.fillStyle = color;
 
-  // main stem
   ctx.fillRect(o.x, o.y, 18, 40);
 
   if (o.variant === "double") {
-    // left arm
     ctx.fillRect(o.x - 10, o.y + 12, 10, 8);
     ctx.fillRect(o.x - 6,  o.y + 20, 6, 12);
-
-    // right arm
     ctx.fillRect(o.x + 18, o.y + 18, 8, 10);
     ctx.fillRect(o.x + 18, o.y + 26, 5, 8);
   } else {
-    // single arm
     ctx.fillRect(o.x + 18, o.y + 18, 8, 12);
   }
 }
 
 function drawFly(o, color) {
   ctx.fillStyle = color;
+  ctx.fillRect(o.x, o.y, 18, 6);
+  ctx.fillRect(o.x + 2, o.y - 4, 6, 4);
+  ctx.fillRect(o.x + 10, o.y - 4, 6, 4);
+}
 
-  ctx.fillRect(o.x, o.y, 18, 6); // body
-  ctx.fillRect(o.x + 2, o.y - 4, 6, 4);  // left wing
-  ctx.fillRect(o.x + 10, o.y - 4, 6, 4); // right wing
+function drawGround(color) {
+  ctx.fillStyle = color;
+  for (let i = 0; i < canvas.width; i += 20) {
+    ctx.fillRect(i - groundOffset, 260, 10, 2);
+  }
+  groundOffset = (groundOffset + speed) % 20;
+}
+
+function drawClouds(color) {
+  ctx.fillStyle = color;
+  clouds.forEach(c => {
+    ctx.fillRect(c.x, c.y, c.w, 6);
+    ctx.fillRect(c.x + 6, c.y - 4, c.w - 12, 4);
+    c.x -= 0.3;
+  });
+  clouds = clouds.filter(c => c.x + c.w > 0);
+}
+
+function drawRocks(color) {
+  ctx.fillStyle = color;
+  rocks.forEach(r => {
+    ctx.fillRect(r.x, r.y, r.w, 2);
+    r.x -= speed;
+  });
+  rocks = rocks.filter(r => r.x + r.w > 0);
 }
 
 // ---------- GAME LOOP ----------
@@ -119,18 +166,22 @@ function drawFly(o, color) {
 function gameLoop() {
   if (!gameRunning) return;
 
-  // Toggle night mode every 600 score
   if (score > 0 && score % 600 === 0) {
     isNight = !isNight;
   }
 
-  // HARD COLOR RULES (no bugs)
   const bgColor = isNight ? "#000" : "#fff";
   const objColor = isNight ? "#fff" : "#000";
 
   // Background
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Clouds
+  drawClouds(objColor);
+
+  // Ground
+  drawGround(objColor);
 
   // Player physics
   player.vy += gravity;
@@ -142,13 +193,14 @@ function gameLoop() {
     player.jumping = false;
   }
 
-  // Player
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+
+  // Rocks
+  drawRocks(objColor);
 
   // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
-
     if (o.type === "cactus") drawCactus(o, objColor);
     if (o.type === "fly") drawFly(o, objColor);
 
@@ -195,13 +247,15 @@ startBtn.onclick = () => {
   resetGame();
   gameRunning = true;
 
-  // Unlock audio for mobile
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
   if (spawnTimer) clearInterval(spawnTimer);
   spawnObstacle();
   spawnTimer = setInterval(spawnObstacle, 1700);
+
+  setInterval(spawnCloud, 4000);
+  setInterval(spawnRock, 1500);
 
   gameLoop();
 };
