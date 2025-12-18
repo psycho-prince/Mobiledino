@@ -1,5 +1,6 @@
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
+ctx.imageSmoothingEnabled = false;
 
 const overlay = document.getElementById("overlay");
 const playBtn = document.getElementById("playBtn");
@@ -8,21 +9,13 @@ const message = document.getElementById("message");
 /* ---------- AUDIO ---------- */
 const jumpSound = new Audio("assets/jump.opus");
 const endSound = new Audio("assets/end.opus");
-jumpSound.preload = "auto";
-endSound.preload = "auto";
 
 /* ---------- PLAYER IMAGE ---------- */
 const playerImg = new Image();
 playerImg.src = "assets/player.png";
 let playerImgReady = false;
 
-playerImg.onload = () => {
-  playerImgReady = true;
-};
-
-playerImg.onerror = () => {
-  console.warn("Player image failed to load. Using fallback.");
-};
+playerImg.onload = () => (playerImgReady = true);
 
 /* ---------- GAME STATE ---------- */
 let running = false;
@@ -39,7 +32,9 @@ const player = {
   w: 40,
   h: 40,
   vy: 0,
-  jumping: false
+  jumping: false,
+  runFrame: 0,
+  runTick: 0
 };
 
 /* ---------- OBJECTS ---------- */
@@ -49,8 +44,30 @@ let clouds = [];
 let stones = [];
 let stars = [];
 
-const birdHeights = [200, 180, 160];
+/* ---------- BIRD CONTROL ---------- */
+const birdHeights = [200, 180];
 let birdIndex = 0;
+let birdCooldown = 0;
+
+/* ---------- MEME DEATH MESSAGES ---------- */
+const memes = [
+  "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
+  "Skill issue bro 🤡",
+  "Kaktoos: 1  |  Nee: 0 🌵",
+  "Bird പറന്നു… നീ വീണു 🐦",
+  "Reflex vacation എടുത്തു 🏖️",
+  "GG bro, next life try 😵",
+  "Jump button exists btw 😶",
+  "Slow internet alle problem 😌",
+  "Practice makes perfect… today not 😭",
+  "Chrome Dino proud of you 🫡",
+  "ഇത് speed run അല്ല bro 😂",
+  "Ayyo… നേരെ കയറി 💀"
+];
+
+function randomMeme() {
+  return memes[Math.floor(Math.random() * memes.length)];
+}
 
 /* ---------- HELPERS ---------- */
 function collide(a, b) {
@@ -87,8 +104,9 @@ function spawnCactus() {
 }
 
 function spawnBird() {
-  if (score < 300) return;
+  if (score < 400) return;
   if (birds.length > 0) return;
+  if (birdCooldown > 0) return;
 
   birds.push({
     x: canvas.width,
@@ -99,6 +117,7 @@ function spawnBird() {
   });
 
   birdIndex = (birdIndex + 1) % birdHeights.length;
+  birdCooldown = 240; // big gap between birds
 }
 
 function spawnCloud() {
@@ -119,7 +138,7 @@ function spawnStone() {
 
 /* ---------- DRAW ---------- */
 function drawBird(b, color) {
-  const wing = b.frame < 10 ? -4 : 0;
+  const wing = b.frame < 12 ? -4 : 0;
   ctx.fillStyle = color;
   ctx.fillRect(b.x, b.y, 18, 6);
   ctx.fillRect(b.x + 4, b.y + wing, 6, 4);
@@ -130,11 +149,14 @@ function drawBird(b, color) {
 function loop() {
   if (!running) return;
 
-  // Night toggle
-  if (score > 0 && score % 600 === 0) {
+  score++;
+
+  if (score % 600 === 0) {
     isNight = !isNight;
     if (isNight) generateStars();
   }
+
+  if (birdCooldown > 0) birdCooldown--;
 
   const bg = isNight ? "#000" : "#fff";
   const fg = isNight ? "#fff" : "#000";
@@ -142,7 +164,7 @@ function loop() {
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  // Stars + Moon / Sun
+  // Stars + Sun/Moon
   if (isNight) {
     ctx.fillStyle = "#fff";
     stars.forEach(s => {
@@ -160,13 +182,13 @@ function loop() {
   // Clouds
   if (Math.random() < 0.01) spawnCloud();
   clouds.forEach(c => {
-    c.x -= 0.3;
+    c.x -= 0.25;
     ctx.fillStyle = fg;
     ctx.fillRect(c.x, c.y, c.w, 6);
   });
   clouds = clouds.filter(c => c.x + c.w > 0);
 
-  // Ground path
+  // Ground
   ctx.fillStyle = fg;
   for (let i = 0; i < canvas.width; i += 20) {
     ctx.fillRect(i - groundOffset, 260, 10, 2);
@@ -174,7 +196,7 @@ function loop() {
   groundOffset = (groundOffset + speed) % 20;
 
   // Stones
-  if (Math.random() < 0.05) spawnStone();
+  if (Math.random() < 0.04) spawnStone();
   stones.forEach(s => {
     s.x -= speed;
     ctx.fillRect(s.x, s.y, s.w, 2);
@@ -190,9 +212,29 @@ function loop() {
     player.jumping = false;
   }
 
-  // Player render (image + fallback)
+  // Running animation
+  if (!player.jumping) {
+    player.runTick++;
+    if (player.runTick % 6 === 0) {
+      player.runFrame = 1 - player.runFrame;
+    }
+  }
+
+  // Player render
   if (playerImgReady) {
-    ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
+    ctx.save();
+    ctx.shadowColor = isNight ? "#0f0" : "#000";
+    ctx.shadowBlur = 6;
+
+    const legOffset = player.runFrame === 0 ? 0 : 2;
+    ctx.drawImage(
+      playerImg,
+      player.x,
+      player.y + legOffset,
+      player.w,
+      player.h
+    );
+    ctx.restore();
   } else {
     ctx.fillStyle = fg;
     ctx.fillRect(player.x, player.y, player.w, player.h);
@@ -207,18 +249,17 @@ function loop() {
   });
   cacti = cacti.filter(c => c.x + c.w > 0);
 
-  // Birds
+  // Birds (slower than cactus)
   spawnBird();
   birds.forEach(b => {
-    b.x -= speed + 1;
-    b.frame = (b.frame + 1) % 20;
+    b.x -= speed * 0.7;
+    b.frame = (b.frame + 1) % 24;
     drawBird(b, fg);
     if (collide(player, b)) endGame();
   });
   birds = birds.filter(b => b.x + b.w > 0);
 
-  // Score
-  score++;
+  // HUD
   ctx.fillStyle = fg;
   ctx.fillText("Score: " + score, 10, 20);
 
@@ -248,6 +289,7 @@ function startGame() {
   speed = 6;
   groundOffset = 0;
   isNight = false;
+  birdCooldown = 0;
 
   // unlock audio on mobile
   jumpSound.play(); jumpSound.pause();
@@ -261,7 +303,7 @@ function endGame() {
   running = false;
   endSound.currentTime = 0;
   endSound.play();
-  message.textContent = "💀 ദിനോസറിന്റേ ഊംബ് 😂 | Score: " + score;
+  message.textContent = `💀 ${randomMeme()} | Score: ${score}`;
   playBtn.textContent = "RETRY";
   overlay.style.display = "flex";
 }
