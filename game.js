@@ -1,218 +1,145 @@
+/* ================= SETUP ================= */
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
-ctx.imageSmoothingEnabled = false;
 
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 const retryBtn = document.getElementById("retryBtn");
 const homeBtn = document.getElementById("homeBtn");
 
-const titleEl = document.getElementById("title");
 const deathMessageEl = document.getElementById("deathMessage");
 const scoreTextEl = document.getElementById("scoreText");
 
-/* ---------- AUDIO ---------- */
-function safeAudio(src) {
+/* ================= AUDIO ================= */
+function audio(src) {
   const a = new Audio(src);
   a.preload = "auto";
   return a;
 }
 
-/* ---------- PLAYERS ---------- */
+/* ================= PLAYERS ================= */
 const players = [
-  {
-    id: "p1",
-    img: "assets/player.png",
-    jump: "assets/jump.opus",
-    end: "assets/end.opus",
-    unlocked: true
-  },
-  {
-    id: "p2",
-    img: "assets/char_friend1.jpg",
-    jump: "assets/char_friend1_jump.mp3",
-    end: "assets/char_friend1_end.mp3",
-    code: "4729"
-  }
+  { id: "p1", img: "assets/player.png", jump: "assets/jump.opus", end: "assets/end.opus" },
+  { id: "p2", img: "assets/char_friend1.jpg", jump: "assets/char_friend1_jump.mp3", end: "assets/char_friend1_end.mp3", code: "4729" }
 ];
 
 let currentPlayer = players[0];
-const playerImg = new Image();
+let playerImg = new Image();
 playerImg.src = currentPlayer.img;
+let jumpSound = audio(currentPlayer.jump);
+let endSound = audio(currentPlayer.end);
 
-let jumpSound = safeAudio(currentPlayer.jump);
-let endSound = safeAudio(currentPlayer.end);
-
-/* ---------- MALAYALAM MEME DEATH MESSAGES ---------- */
+/* ================= MESSAGES ================= */
 const deathMessages = [
   "ഇത് ചാടാൻ പറ്റില്ലേ ഡാ 😭",
-  "കണ്ണ് തുറന്ന് കളിച്ചാൽ മതിയായിരുന്നു 👀",
-  "പറന്ന പക്ഷിയെ നോക്കി നിന്നോ 😌",
+  "കാക്ടസ്: 1 | നീ: 0 💀",
+  "ബ്രോ… jump ബട്ടൺ ഉണ്ടല്ലോ 🤡",
   "ഇന്നും reflex vacation എടുത്തു 🏖️",
-  "കാക്ടസ്: 1  |  നീ: 0 💀",
   "GG bro, next life try 😵"
 ];
 
-/* ---------- GAME STATE ---------- */
-let gameRunning = false;
-let isGameOver = false;
-let score = 0;
-let speed = 3;
-let phase = "ground";
-let obstacleTimer = null;
+/* ================= GAME STATE ================= */
+let running = false, gameOver = false;
+let score = 0, speed = 3;
+let phase = "ground"; // ground | air
+let groundOffset = 0;
+let isNight = false;
 
 const gravity = 0.9;
 
-/* ---------- PLAYER ---------- */
-const player = {
-  x: 50,
-  y: 220,
-  w: 45,
-  h: 45,
-  vy: 0,
-  jumping: false
-};
+/* ================= PLAYER ================= */
+const player = { x: 50, y: 220, w: 45, h: 45, vy: 0, jumping: false };
 
-let obstacles = [];
-let birds = [];
+/* ================= OBJECTS ================= */
+let cacti = [], birds = [], clouds = [], rocks = [], stars = [];
 
-/* ---------- SPAWN ---------- */
-function spawnObstacle() {
-  if (phase !== "ground") return;
-  obstacles.push({ x: canvas.width, y: 230, w: 18, h: 40 });
-}
+/* ================= CHARACTER SELECT ================= */
+window.selectPlayer = function(id) {
+  const p = players.find(x => x.id === id);
+  if (!p) return;
 
-function spawnBird() {
-  if (phase !== "air") return;
-  if (birds.length > 0) return;
-
-  birds.push({
-    x: canvas.width,
-    y: Math.random() > 0.5 ? 160 : 200,
-    w: 30,
-    h: 12
-  });
-}
-
-/* ---------- COLLISION ---------- */
-function isColliding(a, b) {
-  return (
-    a.x < b.x + b.w &&
-    a.x + a.w > b.x &&
-    a.y < b.y + b.h &&
-    a.y + a.h > b.y
-  );
-}
-
-/* ---------- GAME LOOP ---------- */
-function gameLoop() {
-  if (!gameRunning) return;
-
-  if (score < 400) phase = "ground";
-  else phase = "air";
-
-  ctx.fillStyle = "#fff";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  player.vy += gravity;
-  player.y += player.vy;
-  if (player.y >= 220) {
-    player.y = 220;
-    player.vy = 0;
-    player.jumping = false;
+  if (p.code && !localStorage.getItem("unlock_" + p.id)) {
+    if (prompt("Enter code") !== p.code) return;
+    localStorage.setItem("unlock_" + p.id, "1");
   }
 
+  document.querySelectorAll(".player-card").forEach(c => c.classList.remove("selected"));
+  document.getElementById("card-" + id).classList.add("selected");
+
+  currentPlayer = p;
+  playerImg.src = p.img;
+  jumpSound = audio(p.jump);
+  endSound = audio(p.end);
+};
+
+/* ================= SPAWN ================= */
+setInterval(() => clouds.push({ x: 800, y: 40 + Math.random()*60, w: 40 }), 4000);
+setInterval(() => rocks.push({ x: 800, y: 248, w: 4 }), 1500);
+setInterval(() => phase === "ground" && cacti.push({ x: 800, y: 230 }), 2200);
+
+/* ================= LOOP ================= */
+function loop() {
+  if (!running) return;
+
+  if (score === 400) phase = "air";
+  if (score === 800) speed += 0.8;
+
+  ctx.fillStyle = isNight ? "#000" : "#fff";
+  ctx.fillRect(0, 0, 800, 300);
+
+  /* Ground */
+  ctx.fillStyle = isNight ? "#fff" : "#000";
+  for (let i=0;i<800;i+=20) ctx.fillRect(i-groundOffset,260,10,2);
+  groundOffset = (groundOffset + speed) % 20;
+
+  /* Player */
+  player.vy += gravity;
+  player.y += player.vy;
+  if (player.y >= 220) { player.y = 220; player.vy = 0; player.jumping = false; }
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  obstacles.forEach(o => {
-    o.x -= speed;
-    ctx.fillRect(o.x, o.y, 18, 40);
-    if (isColliding(player, o)) endGame();
-  });
-
-  birds.forEach(b => {
-    b.x -= speed + 1;
-    ctx.fillRect(b.x, b.y, 18, 6);
-    if (isColliding(player, b)) endGame();
-  });
-
-  obstacles = obstacles.filter(o => o.x + o.w > 0);
-  birds = birds.filter(b => b.x + b.w > 0);
-
-  spawnBird();
+  /* Cactus */
+  cacti.forEach(o => { o.x -= speed; ctx.fillRect(o.x,o.y,18,40); });
+  birds.forEach(b => { b.x -= speed+1; ctx.fillRect(b.x,b.y,18,6); });
 
   score++;
-  ctx.fillStyle = "#000";
-  ctx.fillText(`Score: ${score}`, 10, 20);
+  ctx.fillText("Score: "+score, 10, 20);
 
-  requestAnimationFrame(gameLoop);
+  requestAnimationFrame(loop);
 }
 
-/* ---------- END GAME ---------- */
+/* ================= GAME OVER ================= */
 function endGame() {
-  if (isGameOver) return;
-  isGameOver = true;
-  gameRunning = false;
-
-  const msg = deathMessages[Math.floor(Math.random() * deathMessages.length)];
-
-  endSound.currentTime = 0;
+  running = false;
+  gameOver = true;
   endSound.play();
 
   setTimeout(() => {
-    startScreen.style.display = "flex";
-
-    titleEl.textContent = "💀 You Lost";
-    deathMessageEl.textContent = msg;
-    scoreTextEl.textContent = `Score: ${score}`;
-
-    deathMessageEl.style.display = "block";
-    scoreTextEl.style.display = "block";
-
+    deathMessageEl.textContent = deathMessages[Math.floor(Math.random()*deathMessages.length)];
+    scoreTextEl.textContent = "Score: " + score;
+    deathMessageEl.style.display = scoreTextEl.style.display = "block";
     startBtn.style.display = "none";
-    retryBtn.style.display = "inline-block";
-    homeBtn.style.display = "inline-block";
-  }, 900); // allow audio to hit
+    retryBtn.style.display = homeBtn.style.display = "inline-block";
+    startScreen.style.display = "flex";
+  }, 900);
 }
 
-/* ---------- INPUT ---------- */
-function jump() {
-  if (!player.jumping && gameRunning && !isGameOver) {
+/* ================= INPUT ================= */
+document.addEventListener("keydown", () => {
+  if (!player.jumping && running) {
     player.vy = -22;
     player.jumping = true;
-    jumpSound.currentTime = 0;
     jumpSound.play();
   }
-}
+});
 
-document.addEventListener("keydown", jump);
-document.addEventListener("touchstart", jump);
-
-/* ---------- BUTTONS ---------- */
-startBtn.onclick = startGame;
-retryBtn.onclick = startGame;
-homeBtn.onclick = () => location.reload();
-
-function startGame() {
+/* ================= BUTTONS ================= */
+startBtn.onclick = retryBtn.onclick = () => {
   startScreen.style.display = "none";
+  cacti = birds = clouds = rocks = [];
+  score = 0; speed = 3; phase = "ground";
+  running = true; gameOver = false;
+  loop();
+};
 
-  obstacles = [];
-  birds = [];
-  score = 0;
-  speed = 3;
-  phase = "ground";
-  isGameOver = false;
-
-  player.y = 220;
-  player.vy = 0;
-  player.jumping = false;
-
-  jumpSound.play(); jumpSound.pause();
-  endSound.play(); endSound.pause();
-
-  if (obstacleTimer) clearInterval(obstacleTimer);
-  obstacleTimer = setInterval(spawnObstacle, 2200);
-
-  gameRunning = true;
-  gameLoop();
-    }
+homeBtn.onclick = () => location.reload();
