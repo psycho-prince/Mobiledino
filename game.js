@@ -4,40 +4,44 @@ const ctx = canvas.getContext("2d");
 const startScreen = document.getElementById("startScreen");
 const startBtn = document.getElementById("startBtn");
 
-let gameRunning = false;
-let score = 0;
-
+// Player image
 const playerImg = new Image();
 playerImg.src = "assets/player.png";
 
-const obstacleImg = new Image();
-obstacleImg.src = "assets/obstacle.png";
+// Sounds
+const jumpSound = new Audio("assets/jump.opus");
+const endSound = new Audio("assets/end.opus");
 
-const jumpSound = new Audio("assets/jump.mp3");
+let gameRunning = false;
+let score = 0;
+let speed = 5;
 
+const gravity = 1.2;
+
+// Player
 const player = {
   x: 50,
   y: 220,
-  w: 40,
-  h: 40,
+  w: 45,
+  h: 45,
   vy: 0,
   jumping: false
 };
 
+// Obstacles (cactus)
 let obstacles = [];
-const gravity = 1.2;
-let speed = 4;
 
 function spawnObstacle() {
   obstacles.push({
     x: canvas.width,
-    y: 230,
-    w: 30,
-    h: 30
+    y: 220,
+    w: 20,
+    h: 40
   });
 }
 
-function collision(a, b) {
+// Collision detection
+function isColliding(a, b) {
   return (
     a.x < b.x + b.w &&
     a.x + a.w > b.x &&
@@ -46,25 +50,41 @@ function collision(a, b) {
   );
 }
 
+// Reset
 function resetGame() {
   obstacles = [];
   score = 0;
-  speed = 4;
+  speed = 5;
   player.y = 220;
   player.vy = 0;
   player.jumping = false;
 }
 
+// Draw cactus (Dino-style)
+function drawCactus(o) {
+  ctx.fillStyle = "#000";
+
+  // main stem
+  ctx.fillRect(o.x, o.y, o.w, o.h);
+
+  // left arm
+  ctx.fillRect(o.x - 8, o.y + 10, 8, 15);
+
+  // right arm
+  ctx.fillRect(o.x + o.w, o.y + 15, 8, 12);
+}
+
+// Game loop
 function gameLoop() {
   if (!gameRunning) return;
 
   ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // player physics
+  // Player physics
   player.vy += gravity;
   player.y += player.vy;
 
-  if (player.y > 220) {
+  if (player.y >= 220) {
     player.y = 220;
     player.vy = 0;
     player.jumping = false;
@@ -72,33 +92,39 @@ function gameLoop() {
 
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
-  // obstacles
+  // Obstacles
   obstacles.forEach(o => {
     o.x -= speed;
-    ctx.drawImage(obstacleImg, o.x, o.y, o.w, o.h);
+    drawCactus(o);
 
-    if (collision(player, o)) {
+    if (isColliding(player, o)) {
       gameRunning = false;
+      endSound.currentTime = 0;
+      endSound.play();
+
       startScreen.style.display = "flex";
-      startBtn.innerText = "RETRY";
+      startBtn.textContent = "RETRY";
     }
   });
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
 
-  // score
+  // Score
   score++;
-  speed += 0.0005;
+  speed += 0.001;
+
+  ctx.fillStyle = "#000";
   ctx.fillText(`Score: ${score}`, 10, 20);
 
   requestAnimationFrame(gameLoop);
 }
 
-// controls
+// Jump
 function jump() {
   if (!player.jumping && gameRunning) {
     player.vy = -18;
     player.jumping = true;
+
     jumpSound.currentTime = 0;
     jumpSound.play();
   }
@@ -107,17 +133,18 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-// start game
+// Start
 startBtn.onclick = () => {
   startScreen.style.display = "none";
   resetGame();
   gameRunning = true;
 
-  // unlock audio (browser rule)
-  jumpSound.play();
-  jumpSound.pause();
+  // unlock audio (mobile)
+  jumpSound.play(); jumpSound.pause();
+  endSound.play(); endSound.pause();
 
   spawnObstacle();
-  setInterval(spawnObstacle, 2000);
+  setInterval(spawnObstacle, 1800);
+
   gameLoop();
 };
