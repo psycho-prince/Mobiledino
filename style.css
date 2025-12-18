@@ -3,13 +3,21 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
+html, body {
   margin: 0;
+  padding: 0;
+  height: 100%;
   background: #111;
   color: #fff;
   font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  text-align: center;
-  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
 }
 
 /* Overlay */
@@ -24,17 +32,20 @@ body {
   justify-content: center;
   z-index: 10;
   padding: 20px;
+  text-align: center;
 }
 
 #overlay h1 {
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
 
 #message {
   font-size: 14px;
-  margin-bottom: 14px;
+  margin-bottom: 16px;
   opacity: 0.9;
 }
+
+/* Button */
 
 button {
   padding: 14px 36px;
@@ -54,9 +65,8 @@ button:active {
 /* Canvas */
 
 canvas {
-  display: block;
-  margin: 80px auto 0;
   background: #fff;
   border-radius: 12px;
   max-width: 100%;
+  height: auto;
 }
