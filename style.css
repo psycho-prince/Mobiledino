@@ -1,13 +1,9 @@
-
-* { box-sizing: border-box; }
-
 body {
   margin: 0;
   background: #111;
   color: #fff;
-  font-family: system-ui, sans-serif;
+  font-family: system-ui;
   text-align: center;
-  overflow: hidden;
 }
 
 #startScreen {
@@ -18,30 +14,23 @@ body {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  z-index: 10;
 }
 
 #playerSelect {
   display: flex;
   gap: 16px;
-  margin: 14px 0;
-}
-
-.player-card {
-  width: 90px;
-  cursor: pointer;
+  margin: 12px;
 }
 
 .player-card img {
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
   border-radius: 50%;
   border: 3px solid #444;
-  object-fit: cover;
 }
 
 .player-card.selected img {
-  border-color: #00ff88;
+  border-color: #0f0;
 }
 
 .player-card.locked img {
@@ -49,31 +38,9 @@ body {
   opacity: 0.4;
 }
 
-#deathMessage,
-#scoreText {
-  display: none;
-  font-size: 14px;
-  margin: 6px 0;
-}
-
-#menuButtons {
-  display: flex;
-  gap: 12px;
-  margin-top: 12px;
-}
-
-button {
-  padding: 12px 26px;
-  font-size: 16px;
-  border-radius: 14px;
-  border: none;
-  cursor: pointer;
-}
-
 canvas {
   display: block;
-  margin: 80px auto 0;
+  margin: 80px auto;
   background: #fff;
-  border-radius: 12px;
-  max-width: 100%;
+  border-radius: 10px;
 }
