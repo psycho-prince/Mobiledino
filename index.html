@@ -1,16 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
+  <meta charset="UTF-8">
   <title>Mobile Dino</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="stylesheet" href="style.css" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
 <div id="startScreen">
   <h1 id="title">🦖 Mobile Dino</h1>
 
+  <!-- Character Select -->
   <div id="playerSelect">
     <div class="player-card selected" id="card-p1" onclick="selectPlayer('p1')">
       <img src="assets/player.png">
@@ -23,9 +24,11 @@
     </div>
   </div>
 
+  <!-- Death info -->
   <p id="deathMessage"></p>
   <p id="scoreText"></p>
 
+  <!-- Buttons -->
   <div id="menuButtons">
     <button id="startBtn">PLAY</button>
     <button id="retryBtn">Retry</button>
