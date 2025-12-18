@@ -14,9 +14,10 @@ const endSound = new Audio("assets/end.opus");
 
 let gameRunning = false;
 let score = 0;
-let speed = 5;
 
-const gravity = 1.2;
+// Tuned physics
+const gravity = 0.9;
+let speed = 3.2;
 
 // Player
 const player = {
@@ -31,12 +32,13 @@ const player = {
 // Obstacles (cactus)
 let obstacles = [];
 
+// Spawn cactus
 function spawnObstacle() {
   obstacles.push({
     x: canvas.width,
-    y: 220,
-    w: 20,
-    h: 40
+    y: 235,
+    w: 18,
+    h: 35
   });
 }
 
@@ -50,31 +52,31 @@ function isColliding(a, b) {
   );
 }
 
-// Reset
+// Reset game state
 function resetGame() {
   obstacles = [];
   score = 0;
-  speed = 5;
+  speed = 3.2;
   player.y = 220;
   player.vy = 0;
   player.jumping = false;
 }
 
-// Draw cactus (Dino-style)
+// Draw white cactus (Dino style)
 function drawCactus(o) {
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#fff";
 
   // main stem
   ctx.fillRect(o.x, o.y, o.w, o.h);
 
   // left arm
-  ctx.fillRect(o.x - 8, o.y + 10, 8, 15);
+  ctx.fillRect(o.x - 6, o.y + 12, 6, 12);
 
   // right arm
-  ctx.fillRect(o.x + o.w, o.y + 15, 8, 12);
+  ctx.fillRect(o.x + o.w, o.y + 16, 6, 10);
 }
 
-// Game loop
+// Main game loop
 function gameLoop() {
   if (!gameRunning) return;
 
@@ -90,6 +92,7 @@ function gameLoop() {
     player.jumping = false;
   }
 
+  // Draw player
   ctx.drawImage(playerImg, player.x, player.y, player.w, player.h);
 
   // Obstacles
@@ -99,6 +102,7 @@ function gameLoop() {
 
     if (isColliding(player, o)) {
       gameRunning = false;
+
       endSound.currentTime = 0;
       endSound.play();
 
@@ -109,20 +113,21 @@ function gameLoop() {
 
   obstacles = obstacles.filter(o => o.x + o.w > 0);
 
-  // Score
+  // Score & difficulty
   score++;
-  speed += 0.001;
+  speed += 0.0006;
 
-  ctx.fillStyle = "#000";
+  ctx.fillStyle = "#fff";
+  ctx.font = "14px system-ui";
   ctx.fillText(`Score: ${score}`, 10, 20);
 
   requestAnimationFrame(gameLoop);
 }
 
-// Jump
+// Jump control
 function jump() {
   if (!player.jumping && gameRunning) {
-    player.vy = -18;
+    player.vy = -22;
     player.jumping = true;
 
     jumpSound.currentTime = 0;
@@ -133,13 +138,13 @@ function jump() {
 document.addEventListener("keydown", jump);
 document.addEventListener("touchstart", jump);
 
-// Start
+// Start game
 startBtn.onclick = () => {
   startScreen.style.display = "none";
   resetGame();
   gameRunning = true;
 
-  // unlock audio (mobile)
+  // Unlock audio (mobile browsers)
   jumpSound.play(); jumpSound.pause();
   endSound.play(); endSound.pause();
 
