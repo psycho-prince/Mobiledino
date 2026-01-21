@@ -12,7 +12,7 @@ const endSound = new Audio("assets/end.mp3");
 
 /* PLAYER IMAGE */
 const playerImg = new Image();
-playerImg.src = "assets/player.png";
+playerImg.src = "assets/file_00000000ef38720bae0fce711357ef1b (1).png";
 let playerImgReady = false;
 playerImg.onload = () => playerImgReady = true;
 
