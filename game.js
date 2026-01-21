@@ -27,7 +27,7 @@ let lastJumpTime = 0;
 
 /* PLAYER */
 const player = {
-  x: 50, y: 220, w: 40, h: 40,
+  x: 50, y: 220, w: 80, h: 80,
   vy: 0,
   jumping: false,
   runFrame: 0,
