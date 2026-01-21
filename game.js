@@ -7,7 +7,7 @@ const playBtn = document.getElementById("playBtn");
 const message = document.getElementById("message");
 
 /* AUDIO */
-const jumpSound = new Audio("assets/jump.opus");
+const jumpSound = new Audio("assets/jump.mp3");
 const endSound = new Audio("assets/end.mp3");
 
 /* PLAYER IMAGE */
